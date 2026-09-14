@@ -25,6 +25,6 @@ Local run: `python -m http.server 8787` in the repo root, then open http://127.0
 ## Choices made while building
 
 - Bar scale is the strongest verified single food (160 total), shared by all rows. Oatmeal is unverified and clamps at full width.
-- The overview combo mode ignores the resource checklist, so it shows what exists; the best-food panel shows what you can make.
+- The resource checklist filters every section (changed 2026-09-14 after Patrik's first test; the first version only filtered best food).
 - Meads never enter build combos. Their biome is the latest biome among their ingredients.
 - Bog Witch spices are listed as resources in the Swamp or Mountain tier they unlock in.

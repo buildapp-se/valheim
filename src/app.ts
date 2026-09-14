@@ -67,8 +67,9 @@ function total(it: Item): number {
 function inBiome(it: Item): boolean {
   return state.biome !== null && biomeRank(it.biome) <= biomeRank(state.biome);
 }
+/** foods in your biome whose whole ingredient tree is ticked in Resources */
 function visibleFoods(): Item[] {
-  return foods.filter((f) => inBiome(f) && (state.feasts || !f.food?.feast));
+  return foods.filter((f) => inBiome(f) && (state.feasts || !f.food?.feast) && canMake(f));
 }
 function canMake(it: Item): boolean {
   const off = new Set(state.off);
@@ -83,7 +84,7 @@ let comboCache: { key: string; result: Map<string, Combo[]> } | null = null;
 function combosFor(build: Build): Combo[] {
   const key = JSON.stringify([state.biome, state.feasts, [...state.off].sort()]);
   if (comboCache?.key !== key) {
-    const cand = visibleFoods().filter(canMake);
+    const cand = visibleFoods();
     comboCache = { key, result: new Map(BUILDS.map((b) => [b.id, bestCombos(cand, b)])) };
   }
   return comboCache.result.get(build.id) ?? [];
@@ -174,7 +175,7 @@ function renderPicker(): void {
 }
 
 function renderBest(): void {
-  const cand = visibleFoods().filter(canMake);
+  const cand = visibleFoods();
   const off = state.off.length;
   replace(
     'best',
@@ -207,7 +208,6 @@ function renderBest(): void {
                   'div',
                   { class: 'combo' },
                   h('div', { class: 'foods' }, ...c.foods.map((f) => h('span', { class: 'chip' }, f.name, unverifiedMark(f)))),
-                  h('button', { class: 'small', title: 'Add one craft of each to the gather list', onclick: () => addCombo(c) }, '+ gather'),
                   h(
                     'div',
                     { class: 'sum' },
@@ -217,6 +217,7 @@ function renderBest(): void {
                     h('span', { class: 'n r' }, `+${c.sum.healing}/tick`),
                     h('span', { class: 'muted' }, `${mmss(c.sum.duration)} min`),
                   ),
+                  comboStepper(c),
                   bars(c.sum, MAX_TOTAL * 3, MAX_REGEN * 3),
                 ),
               ),
@@ -225,11 +226,26 @@ function renderBest(): void {
     ),
   );
 }
-function addCombo(c: Combo): void {
+/** add (+1) or remove (-1) one craft of each food in the combo */
+function stepCombo(c: Combo, dir: 1 | -1): void {
   const picks = { ...state.picks };
-  for (const f of c.foods) picks[f.name] = (picks[f.name] ?? 0) + snap(f, 1);
+  for (const f of c.foods) {
+    const next = Math.max(0, (picks[f.name] ?? 0) + dir * snap(f, 1));
+    if (next === 0) delete picks[f.name];
+    else picks[f.name] = next;
+  }
   update({ picks });
-  document.getElementById('gather')?.scrollIntoView({ behavior: 'smooth' });
+}
+/** − N +, where N is how many full rounds of this trio the gather list holds */
+function comboStepper(c: Combo): HTMLElement {
+  const n = Math.min(...c.foods.map((f) => Math.floor((state.picks[f.name] ?? 0) / snap(f, 1))));
+  return h(
+    'span',
+    { class: 'stepper', title: 'One craft of each food, in the gather list' },
+    h('button', { class: 'small', onclick: () => stepCombo(c, -1), disabled: c.foods.every((f) => !state.picks[f.name]) }, '−'),
+    h('b', { class: 'count' }, String(n)),
+    h('button', { class: 'small', onclick: () => stepCombo(c, 1) }, '+'),
+  );
 }
 
 const SORTS: Record<SortKey, (a: Item) => number> = {
@@ -266,7 +282,6 @@ function renderOverview(): void {
   const numHead = [h('th', { class: 'n' }, 'Health'), h('th', { class: 'n' }, 'Stamina'), h('th', { class: 'n' }, 'Eitr'), h('th', { class: 'n' }, 'Total'), h('th', { class: 'n' }, 'hp/tick'), h('th', { class: 'n' }, 'Time')];
   let body: HTMLElement[];
   if (state.combos) {
-    // ignores the resource checklist on purpose: this is "what exists", the builds panel is "what you can make"
     const sortBy = COMBO_SORTS[state.sort];
     const top = bestCombos(vis, { id: 'x', label: '', hint: '', score: sortBy }, 30);
     body = top.map((c) =>
@@ -281,7 +296,7 @@ function renderOverview(): void {
         h('td', { class: 'n' }, String(c.sum.health + c.sum.stamina + c.sum.eitr)),
         h('td', { class: 'n r' }, String(c.sum.healing)),
         h('td', { class: 'n muted' }, mmss(c.sum.duration)),
-        h('td', {}, h('button', { class: 'small', onclick: () => addCombo(c) }, '+')),
+        h('td', {}, comboStepper(c)),
       ),
     );
   } else {
@@ -373,7 +388,7 @@ function renderGather(): void {
     rawByBiome.set(b, [...(rawByBiome.get(b) ?? []), [name, n]]);
   }
   const visFoods = visibleFoods().sort((a, b) => biomeRank(b.biome) - biomeRank(a.biome) || total(b) - total(a));
-  const visMeads = meads.filter(inBiome).sort((a, b) => biomeRank(b.biome) - biomeRank(a.biome) || a.name.localeCompare(b.name));
+  const visMeads = meads.filter((m) => inBiome(m) && canMake(m)).sort((a, b) => biomeRank(b.biome) - biomeRank(a.biome) || a.name.localeCompare(b.name));
   replace(
     'gather',
     h('div', { class: 'head' }, h('h2', {}, 'Gather list'), picked.length > 0 && h('button', { onclick: () => update({ picks: {} }) }, 'Clear')),
@@ -446,7 +461,7 @@ function renderResources(): void {
       h('h2', {}, 'Resources you can be bothered to fetch'),
       h('div', { class: 'controls' }, h('button', { onclick: () => update({ off: [] }) }, 'Tick all'), h('button', { onclick: () => update({ off: raws.map((x) => x.name) }) }, 'Untick all')),
     ),
-    h('p', { class: 'muted', style: 'margin:0' }, 'Untick what you refuse to farm. The best-food panel only uses dishes whose whole ingredient tree is ticked.'),
+    h('p', { class: 'muted', style: 'margin:0' }, 'Untick what you refuse to farm. Every dish and mead that needs it, anywhere in its recipe, disappears from the whole page.'),
     ...groups,
   );
 }
