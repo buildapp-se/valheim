@@ -28,6 +28,7 @@ import {
   raw,
   replace,
   stationIcon,
+  togglePopover,
   unverifiedMark,
 } from './ui.js';
 
@@ -183,6 +184,26 @@ function stationLine(it: Item): string {
   return `${it.recipe.station}${y > 1 && !it.mead ? ` ×${y}` : ''}: ${ingredients(it)}`;
 }
 
+/** a food pill in a combo; click shows its station and ingredients so nobody has to hunt the gather list */
+function foodChip(f: Item): HTMLElement {
+  const b = h(
+    'button',
+    {
+      type: 'button',
+      class: `chip${f.food?.feast ? ' feast' : ''}`,
+      'aria-expanded': 'false',
+      'aria-label': `${f.name}: show ingredients`,
+      onclick: (e: Event) => {
+        e.stopPropagation();
+        togglePopover(b, stationLine(f));
+      },
+    },
+    f.food?.feast ? ic('ui-feast', 'ic-13') : null,
+    f.name,
+  );
+  return b;
+}
+
 // ---- header -----------------------------------------------------------------------
 function renderBiome(): void {
   const b = state.biome;
@@ -318,7 +339,7 @@ function renderBest(): void {
                 h(
                   'div',
                   { class: 'combo' },
-                  h('div', { class: 'foods' }, ...c.foods.map((f) => [h('span', { class: `chip${f.food?.feast ? ' feast' : ''}` }, f.food?.feast ? ic('ui-feast', 'ic-13') : null, f.name), unverifiedMark(f)])),
+                  h('div', { class: 'foods' }, ...c.foods.map((f) => [foodChip(f), unverifiedMark(f)])),
                   h('div', { class: 'row2' }, statSlots(c.sum), comboStepper(c)),
                   bars(c.sum, MAX_TOTAL * 3, MAX_REGEN * 3),
                 ),
@@ -451,7 +472,7 @@ function renderOverview(): void {
         h(
           'tr',
           {},
-          h('td', { class: 'name' }, h('div', { class: 'rowname' }, ...c.foods.map((f) => [h('span', { class: 'chip' }, f.name), unverifiedMark(f)]))),
+          h('td', { class: 'name' }, h('div', { class: 'rowname' }, ...c.foods.map((f) => [foodChip(f), unverifiedMark(f)]))),
           h('td', { class: 'col-bars' }, bars(c.sum, MAX_TOTAL * 3, MAX_REGEN * 3)),
           h('td', { class: 'n num h' }, String(c.sum.health)),
           h('td', { class: 'n num s' }, String(c.sum.stamina)),
@@ -489,7 +510,7 @@ function renderOverview(): void {
             h('span', { class: 'k' }, f.recipe ? 'Station' : 'Source'),
             h('span', {}, stationLine(f)),
             h('span', { class: 'k' }, 'Add'),
-            h('span', {}, h('button', { type: 'button', class: 'small', onclick: () => addPick(f, 1) }, ic('ui-add', 'ic-15'), 'Add to gather list')),
+            h('span', {}, rowStepper(f)),
           ),
         ),
       );
@@ -534,7 +555,7 @@ function renderOverview(): void {
         h('td', { class: 'n num r' }, String(st.healing)),
         h('td', { class: 'n num d col-time' }, mmss(st.duration)),
         h('td', { class: 'ing' }, h('div', { class: 'inner' }, sIcon ? ic(sIcon, 'ic-15') : null, stationLine(f))),
-        h('td', { class: 'add' }, h('button', { type: 'button', class: 'small', title: 'Add to gather list', 'aria-label': `Add ${f.name} to the gather list`, onclick: () => addPick(f, 1) }, ic('ui-add', 'ic-15'))),
+        h('td', { class: 'add' }, rowStepper(f)),
       );
       return [row, panel];
     };
@@ -612,6 +633,18 @@ function stepper(it: Item): HTMLElement {
     }),
     h('button', { type: 'button', class: 'plus', 'aria-label': `Add ${step} ${it.name}`, onclick: () => addPick(it, 1) }, `+${step}`),
     h('button', { type: 'button', class: 'plus big', title: 'Five crafts, like shift-click in the game', 'aria-label': `Add ${5 * step} ${it.name}`, onclick: () => addPick(it, 5) }, `+${5 * step}`),
+  );
+}
+/** − N + for one dish in the overview, same look as the combo stepper; N is portions */
+function rowStepper(it: Item): HTMLElement {
+  const n = state.picks[it.name] ?? 0;
+  const step = portionStep(it);
+  return h(
+    'span',
+    { class: 'stepper', title: 'Portions in the gather list' },
+    h('button', { type: 'button', 'aria-label': `Remove ${step} ${it.name}`, onclick: () => addPick(it, -1), disabled: n === 0 }, ic('ui-remove', 'ic-14')),
+    h('b', { class: 'count' }, String(n)),
+    h('button', { type: 'button', class: 'plus', 'aria-label': `Add ${step} ${it.name}`, onclick: () => addPick(it, 1) }, ic('ui-add', 'ic-14')),
   );
 }
 function pickRow(it: Item): HTMLElement {
