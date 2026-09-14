@@ -312,6 +312,9 @@ main { max-width: var(--content-max); margin: 0 auto; display: grid; grid-templa
   display: inline-flex; align-items: center; gap: 6px;
 }
 .chip.feast { border-color: var(--ember-line); color: var(--ember); }
+/* food pills are buttons that open station + ingredients */
+button.chip { height: auto; font-size: 13px; padding: 5px 10px; justify-content: flex-start; text-align: left; }
+button.chip:hover, button.chip[aria-expanded='true'] { background: var(--plank-hover); border-color: var(--ember); color: var(--ember-hi); }
 .tag-feast {
   display: inline-flex; align-items: center; gap: var(--s-1);
   font-family: var(--font-num); font-size: 11px; color: var(--ember);
@@ -345,8 +348,9 @@ td .mark, .chip + .mark, .rowname .mark { width: 28px; height: 28px; }
 }
 
 /* ---- steppers -------------------------------------------------------------- */
-/* Cells are flex-basis, never `width`: `all: unset` resets flex-shrink to 1, so a
-   width alone lets the five-cell gather group collapse and spill its labels. */
+/* Cells carry flex-basis AND width: `all: unset` resets flex-shrink to 1, so a width
+   alone lets the group collapse; Firefox and Safari ignore flex-basis when sizing the
+   inline-flex box, so flex-basis alone makes the box too narrow and the buttons spill out. */
 .stepper {
   display: inline-flex; align-items: stretch; flex: 0 0 auto;
   border: 1px solid var(--line-strong); border-radius: var(--r-1); height: var(--control-h);
@@ -354,7 +358,7 @@ td .mark, .chip + .mark, .rowname .mark { width: 28px; height: 28px; }
 .stepper button {
   all: unset; box-sizing: border-box; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  flex: 0 0 var(--control-h); align-self: stretch;
+  flex: 0 0 var(--control-h); width: var(--control-h); align-self: stretch;
   color: var(--ink-2); font-family: var(--font-num); font-size: 13px; white-space: nowrap;
 }
 .stepper button:hover { background: var(--plank-hover); color: var(--ink); }
@@ -369,8 +373,8 @@ td .mark, .chip + .mark, .rowname .mark { width: 28px; height: 28px; }
 
 /* gather stepper: always 44 high, five cells, value still typeable */
 .stepper.wide { height: var(--tap-h); }
-.stepper.wide button { flex: 0 0 44px; }
-.stepper.wide button.big { flex: 0 0 48px; }
+.stepper.wide button { flex: 0 0 44px; width: 44px; }
+.stepper.wide button.big { flex: 0 0 48px; width: 48px; }
 .stepper.wide button.big:first-child, .stepper.wide button:nth-child(2) { border-right: 0; }
 .stepper.wide button:nth-child(2) { border-left: 1px solid var(--line); }
 .stepper.wide button.big:last-child { border-left: 1px solid var(--line); }
@@ -383,7 +387,7 @@ td .mark, .chip + .mark, .rowname .mark { width: 28px; height: 28px; }
 .stepper.wide input::-webkit-inner-spin-button { appearance: none; margin: 0; }
 @media (max-width: 900px) {
   .stepper.wide { width: 100%; }
-  .stepper.wide button, .stepper.wide button.big { flex: 1 1 0; }
+  .stepper.wide button, .stepper.wide button.big { flex: 1 1 0; width: auto; }
   .stepper.wide input { flex: 1.2 1 0; width: auto; min-width: 0; }
 }
 

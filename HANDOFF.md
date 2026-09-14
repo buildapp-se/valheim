@@ -28,3 +28,6 @@ Local run: `python -m http.server 8787` in the repo root, then open http://127.0
 - The resource checklist filters every section (changed 2026-09-14 after Patrik's first test; the first version only filtered best food).
 - Meads never enter build combos. Their biome is the latest biome among their ingredients.
 - Bog Witch spices are listed as resources in the Swamp or Mountain tier they unlock in.
+- Steppers set `width` as well as flex-basis: Firefox and Safari ignore flex-basis when sizing the box, so after the redesign their +1/+5 and card + spilled outside (fixed 2026-09-14). Check layout changes in Firefox or WebKit too, not only Chrome.
+- Overview food rows use the same `− N +` as combos (N = portions). Food pills in combos are buttons that open station and ingredients in the popover.
+- Per biome is disabled while Combos is on, by design: a trio spans biomes.
