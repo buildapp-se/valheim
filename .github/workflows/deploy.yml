@@ -34,6 +34,15 @@ jobs:
           mkdir -p out/dist
           cp index.html style.css .nojekyll out/
           cp dist/*.js out/dist/
+      # Pages sends max-age=14400 and Cloudflare caches it, so without a version tag a new
+      # index.html can load four-hour-old scripts. The commit sha gives every deploy new URLs.
+      - name: Version-tag scripts and stylesheet
+        run: |
+          sed -i -E "s|(src=\"dist/app\.js)\"|\1?v=${GITHUB_SHA}\"|; s|(href=\"style\.css)\"|\1?v=${GITHUB_SHA}\"|" out/index.html
+          sed -i -E "s|(from '\./[a-z]+\.js)'|\1?v=${GITHUB_SHA}'|g" out/dist/*.js
+          grep -q "app.js?v=${GITHUB_SHA}" out/index.html
+          grep -q "style.css?v=${GITHUB_SHA}" out/index.html
+          ! grep -E "from '\./[a-z]+\.js'" out/dist/*.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
