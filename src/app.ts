@@ -7,12 +7,15 @@ import {
   gather,
   getItem,
   loadItems,
+  portionStep,
+  servings,
   rawMaterials,
   snap,
   sumOf,
   type Biome,
   type Build,
   type Combo,
+  type CraftStep,
   type Item,
   type Sum,
 } from './model.js';
@@ -37,6 +40,14 @@ try {
   if (saved) Object.assign(state, JSON.parse(saved) as Partial<State>);
 } catch {
   /* private mode or blocked storage: run without persistence */
+}
+// picks are portions; snap anything saved before that (or for a renamed item) to valid steps
+for (const [name, n] of Object.entries(state.picks)) {
+  try {
+    state.picks[name] = snap(getItem(name), n);
+  } catch {
+    delete state.picks[name];
+  }
 }
 function save(): void {
   try {
@@ -137,6 +148,17 @@ const legend = (): HTMLElement =>
 const unverifiedMark = (it: Item): HTMLElement | null => {
   const note = it.food?.unverified ?? it.unverified;
   return note ? h('span', { class: 'warn', title: note }, ' ⚠') : null;
+};
+/** why a dish doesn't step by 1; null for ordinary dishes */
+function stepNote(it: Item): string | null {
+  const y = it.recipe?.yield ?? 1;
+  if (it.food?.feast) return `A feast is placed with the Serving tray and serves ${servings(it)} portions. Portions go in steps of ${portionStep(it)}. Stacks 5 per slot.`;
+  if (y > 1) return `One craft makes ${y}, so portions go in steps of ${y}.`;
+  return null;
+}
+const infoMark = (it: Item): HTMLElement | null => {
+  const note = stepNote(it);
+  return note ? h('span', { class: 'info', tabindex: 0, role: 'note', 'aria-label': note, 'data-tip': note }, 'i') : null;
 };
 const ingredients = (it: Item): string =>
   Object.entries(it.recipe?.materials ?? {})
@@ -313,7 +335,7 @@ function renderOverview(): void {
           h(
             'tr',
             {},
-            h('td', { class: 'name' }, f.name, unverifiedMark(f), st.feast ? h('span', { class: 'muted' }, ' (feast)') : null),
+            h('td', { class: 'name' }, f.name, unverifiedMark(f), st.feast ? h('span', { class: 'muted' }, ' (feast)') : null, infoMark(f)),
             h('td', {}, bars(st, MAX_TOTAL, MAX_REGEN)),
             h('td', { class: 'n h' }, String(st.health)),
             h('td', { class: 'n s' }, String(st.stamina)),
@@ -341,25 +363,25 @@ function renderOverview(): void {
 }
 
 function addPick(it: Item, crafts: number): void {
-  const y = it.recipe?.yield ?? 1;
   const picks = { ...state.picks };
-  const next = Math.max(0, (picks[it.name] ?? 0) + crafts * y);
+  const next = Math.max(0, (picks[it.name] ?? 0) + crafts * portionStep(it));
   if (next === 0) delete picks[it.name];
   else picks[it.name] = next;
   update({ picks });
 }
 function stepper(it: Item): HTMLElement {
   const n = state.picks[it.name] ?? 0;
-  const y = it.recipe?.yield ?? 1;
+  const step = portionStep(it);
   return h(
     'span',
     { class: 'stepper' },
-    h('button', { class: 'small', onclick: () => addPick(it, -5), disabled: n === 0 }, '−5'),
-    h('button', { class: 'small', onclick: () => addPick(it, -1), disabled: n === 0 }, '−1'),
+    h('button', { class: 'small', onclick: () => addPick(it, -5), disabled: n === 0 }, `−${5 * step}`),
+    h('button', { class: 'small', onclick: () => addPick(it, -1), disabled: n === 0 }, `−${step}`),
     h('input', {
       type: 'number',
       min: 0,
-      step: y,
+      step,
+      'aria-label': `${it.name} portions`,
       value: n,
       onchange: (e: Event) => {
         const v = snap(it, Number((e.target as HTMLInputElement).value) || 0);
@@ -369,16 +391,20 @@ function stepper(it: Item): HTMLElement {
         update({ picks });
       },
     }),
-    h('button', { class: 'small', onclick: () => addPick(it, 1) }, '+1'),
-    h('button', { class: 'small', onclick: () => addPick(it, 5), title: 'Five crafts, like shift-click in the game' }, '+5'),
+    h('button', { class: 'small', onclick: () => addPick(it, 1) }, `+${step}`),
+    h('button', { class: 'small', onclick: () => addPick(it, 5), title: 'Five crafts, like shift-click in the game' }, `+${5 * step}`),
   );
 }
 function pickRow(it: Item): HTMLElement {
   const y = it.recipe?.yield ?? 1;
   const sub = it.mead ? `${it.mead.effect}. ${it.recipe?.station}` : it.recipe ? `${it.recipe.station}${y > 1 ? `, ${y} per craft` : ''}: ${ingredients(it)}` : it.source ?? '';
-  return h('div', { class: `row${(state.picks[it.name] ?? 0) > 0 ? ' picked' : ''}` }, h('span', {}, it.name, unverifiedMark(it), h('span', { class: 'sub' }, sub)), stepper(it));
+  return h('div', { class: `row${(state.picks[it.name] ?? 0) > 0 ? ' picked' : ''}` }, h('span', {}, it.name, unverifiedMark(it), infoMark(it), h('span', { class: 'sub' }, sub)), stepper(it));
 }
 
+function craftText(s: CraftStep): string {
+  if (s.portions !== s.makes) return `${s.makes} feast${s.makes > 1 ? 's' : ''} = ${s.portions} portions`;
+  return s.crafts === s.makes ? `${s.crafts}` : `${s.crafts} craft${s.crafts > 1 ? 's' : ''} → ${s.makes}`;
+}
 function renderGather(): void {
   const picked = Object.entries(state.picks).filter(([, n]) => n > 0);
   const g = gather(state.picks);
@@ -392,7 +418,7 @@ function renderGather(): void {
   replace(
     'gather',
     h('div', { class: 'head' }, h('h2', {}, 'Gather list'), picked.length > 0 && h('button', { onclick: () => update({ picks: {} }) }, 'Clear')),
-    h('p', { class: 'muted', style: 'margin:0 0 0.6rem' }, 'Pick what you want to cook. Counts step by what one craft makes; +5 is a shift-click. The right side is what to bring home and in which order to craft it.'),
+    h('p', { class: 'muted', style: 'margin:0 0 0.6rem' }, 'Counts are portions, one per thing you eat. Dishes marked i come in bigger steps: hover or tap it to see why. The biggest button is five crafts, like shift-click. The right side is what to bring home and in which order to craft it.'),
     h(
       'div',
       { class: 'gather' },
@@ -415,7 +441,7 @@ function renderGather(): void {
                 .sort((a, b) => biomeRank(a[0]) - biomeRank(b[0]))
                 .map(([b, rows]) => [h('div', { class: 'muted', style: 'margin-top:0.4rem' }, b), h('ul', {}, ...rows.map(([name, n]) => h('li', {}, h('span', {}, name, h('span', { class: 'st' }, ` · ${getItem(name).source ?? ''}`)), h('b', {}, String(n)))))]),
               h('h3', {}, 'Crafting order'),
-              h('ul', {}, ...g.steps.map((s) => h('li', {}, h('span', {}, `${s.name}`, h('span', { class: 'st' }, ` · ${s.station}`)), h('b', {}, s.crafts === s.makes ? `${s.crafts}` : `${s.crafts} craft${s.crafts > 1 ? 's' : ''} → ${s.makes}`)))),
+              h('ul', {}, ...g.steps.map((s) => h('li', {}, h('span', {}, `${s.name}`, h('span', { class: 'st' }, ` · ${s.station}`)), h('b', {}, craftText(s))))),
             ],
       ),
     ),

@@ -73,16 +73,30 @@ export function rawMaterials(it: Item, into: Set<string> = new Set()): Set<strin
   return into;
 }
 
-/** round n up to the nearest multiple of the recipe yield (raw items snap to 1) */
-export function snap(it: Item, n: number): number {
-  const y = it.recipe?.yield ?? 1;
-  return Math.max(0, Math.ceil(n / y) * y);
+/** a placed feast is eaten from this many times (wiki: Feast, "10 servings") */
+export const FEAST_SERVINGS = 10;
+
+/** portions you get from one item: one serving per item, ten per feast */
+export function servings(it: Item): number {
+  return it.food?.feast ? FEAST_SERVINGS : 1;
+}
+/** portions one craft gives: recipe yield times servings per item */
+export function portionStep(it: Item): number {
+  return (it.recipe?.yield ?? 1) * servings(it);
+}
+/** round a portion count up to whole crafts */
+export function snap(it: Item, portions: number): number {
+  const step = portionStep(it);
+  return Math.max(0, Math.ceil(portions / step) * step);
 }
 
 export interface CraftStep {
   name: string;
   crafts: number;
+  /** items produced */
   makes: number;
+  /** portions produced: equals makes, except for feasts */
+  portions: number;
   station: string;
 }
 export interface GatherList {
@@ -92,7 +106,7 @@ export interface GatherList {
 }
 
 /**
- * Expand picks (item name -> how many you want) down to raw resources and a crafting order.
+ * Expand picks (item name -> portions you want) down to raw resources and a crafting order.
  * Items are processed in order of their longest distance from a pick, so every demand on a
  * shared intermediate (Barley flour feeds both Bread dough and Fish wraps) is summed before
  * it is rounded up to whole crafts. Rounding once per item is what makes the totals right.
@@ -109,7 +123,7 @@ export function gather(picks: Record<string, number>): GatherList {
     if (n <= 0) continue;
     const it = getItem(name);
     setDepth(it, 0);
-    need.set(it.name, (need.get(it.name) ?? 0) + n);
+    need.set(it.name, (need.get(it.name) ?? 0) + Math.ceil(n / servings(it)));
   }
   const order = [...depth.entries()].sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0]));
   const raw = new Map<string, number>();
@@ -123,7 +137,8 @@ export function gather(picks: Record<string, number>): GatherList {
       continue;
     }
     const crafts = Math.ceil(n / it.recipe.yield);
-    steps.push({ name, crafts, makes: crafts * it.recipe.yield, station: it.recipe.station });
+    const makes = crafts * it.recipe.yield;
+    steps.push({ name, crafts, makes, portions: makes * servings(it), station: it.recipe.station });
     for (const [m, q] of Object.entries(it.recipe.materials)) need.set(m, (need.get(m) ?? 0) + q * crafts);
   }
   steps.reverse(); // deepest first: make the flour before the dough before the bread

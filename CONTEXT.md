@@ -7,7 +7,7 @@ Static web app at `buildapp.se/valheim/` for picking Valheim food. Unlisted on t
 - **Biome gate.** First visit asks for the highest biome reached. Everything from later biomes is hidden: foods, meads, resources, combos. Header has "Next biome" (one step) and "Show all".
 - **Best food.** Top 5 three-food combos per build, from dishes whose whole ingredient tree is ticked in Resources. Feasts behind a toggle, default off.
 - **Overview.** Every food grouped by biome, highest first, with a stacked bar (red health, yellow stamina, blue eitr) and a thin green hp/tick bar. Sort dropdown. "Combos" checkbox switches to the top 30 three-food sums for the sort key.
-- **Gather list.** Dishes and meads with steppers that move in whole crafts (`+1`, `+5` = in-game shift-click). Output: raw resources grouped by biome with source, plus crafting order.
+- **Gather list.** Dishes and meads counted in portions, one per thing you eat. Steppers move in whole crafts: a dish that makes 3 per craft steps by 3, a feast by 10 (one placed feast serves 10, wiki Feast page). The big buttons are five crafts, the in-game shift-click. Dishes that do not step by 1 carry an i tooltip explaining why. Output: raw resources grouped by biome with source, plus crafting order, feasts shown as feasts = portions.
 - **Resources.** Checklist of raw resources up to your biome, all ticked by default, each with a one-line source. An unticked resource hides every dish and mead that needs it, anywhere in its recipe tree, from every section.
 - **Combo stepper.** Each combo shows `− N +`: plus adds one craft of each of its three foods to the gather list, N is how many full rounds the list holds.
 

@@ -47,6 +47,22 @@ input[type='checkbox'] { accent-color: var(--gold); width: 1rem; height: 1rem; }
 label { cursor: pointer; }
 .muted { color: var(--muted); }
 .warn { color: var(--stamina); cursor: help; }
+/* info icon: CSS tooltip so it works on hover and on tap (focus) */
+.info {
+  position: relative; display: inline-grid; place-items: center;
+  width: 1rem; height: 1rem; margin-left: 0.35rem; vertical-align: 1px;
+  border: 1px solid var(--gold-dim); border-radius: 50%;
+  color: var(--gold); font: italic 600 0.7rem/1 Georgia, serif; cursor: help;
+}
+.info:hover::after, .info:focus::after {
+  content: attr(data-tip);
+  position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 20;
+  width: max-content; max-width: min(260px, 80vw);
+  background: #26221a; color: var(--text); border: 1px solid var(--gold-dim); border-radius: 6px;
+  padding: 0.4rem 0.55rem; font: 400 0.8rem/1.35 var(--sans); white-space: normal; text-align: left;
+  box-shadow: 0 4px 14px #000a;
+}
+.info:focus { outline: none; box-shadow: 0 0 0 2px var(--gold-dim); }
 
 .top {
   max-width: 1600px; margin: 0 auto; padding-block: 1.2rem 0.6rem;
@@ -142,5 +158,7 @@ td.ing { color: var(--muted); font-size: 0.85rem; }
   .list .row { grid-template-columns: 1fr; }
   .builds { grid-template-columns: 1fr; }
   td.ing { display: none; }
+  /* tooltip pinned to the screen bottom so it never pushes the page sideways */
+  .info:hover::after, .info:focus::after { position: fixed; left: 16px; right: 16px; bottom: 16px; width: auto; max-width: none; }
   th.ing { display: none; }
 }

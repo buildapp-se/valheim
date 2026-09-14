@@ -2,7 +2,7 @@
 // Prints one line per check on failure; exits non-zero if anything fails.
 import assert from 'node:assert/strict';
 import { ITEMS } from './dist/data.js';
-import { BIOMES, BUILDS, bestCombos, biomeRank, gather, getItem, loadItems, rawMaterials, snap, sumOf } from './dist/model.js';
+import { BIOMES, BUILDS, bestCombos, biomeRank, gather, getItem, loadItems, portionStep, rawMaterials, snap, sumOf } from './dist/model.js';
 
 loadItems(ITEMS);
 let failed = 0;
@@ -55,6 +55,16 @@ check('snap rounds up to the yield', () => {
   assert.equal(snap(s, 4), 4);
   assert.equal(snap(s, 9), 12);
   assert.equal(snap(getItem('Serpent stew'), 3), 3);
+  assert.equal(snap(getItem('Scorching medley'), 7), 9);
+});
+check('feasts count portions: 10 portions = 1 feast, 11 portions = 2 feasts', () => {
+  const bowl = getItem('Ashlands gourmet bowl');
+  assert.equal(portionStep(bowl), 10);
+  assert.equal(snap(bowl, 11), 20);
+  const one = gather({ 'Ashlands gourmet bowl': 10 });
+  assert.equal(one.raw.get('Fiery spice powder'), 1);
+  assert.deepEqual(one.steps.find((s) => s.name === 'Ashlands gourmet bowl'), { name: 'Ashlands gourmet bowl', crafts: 1, makes: 1, portions: 10, station: 'Food preparation table' });
+  assert.equal(gather({ 'Ashlands gourmet bowl': 11 }).raw.get('Fiery spice powder'), 2);
 });
 check('gather expands shared intermediates once: 2 Fish wraps + 2 Bread', () => {
   // Fish wraps: 2 cooked fish + 4 barley flour each. Bread: 1 dough each, dough = 10 flour -> 2.
@@ -65,10 +75,10 @@ check('gather expands shared intermediates once: 2 Fish wraps + 2 Bread', () => 
   const names = g.steps.map((s) => s.name);
   assert.ok(names.indexOf('Barley flour') < names.indexOf('Bread dough'), names.join(','));
   assert.ok(names.indexOf('Bread dough') < names.indexOf('Bread'), names.join(','));
-  assert.deepEqual(g.steps.find((s) => s.name === 'Bread dough'), { name: 'Bread dough', crafts: 1, makes: 2, station: 'Food preparation table' });
+  assert.deepEqual(g.steps.find((s) => s.name === 'Bread dough'), { name: 'Bread dough', crafts: 1, makes: 2, portions: 2, station: 'Food preparation table' });
 });
 check('gather counts feasts and meads', () => {
-  const g = gather({ 'Northern Morning Fare': 1, 'Minor stamina mead': 6 });
+  const g = gather({ 'Northern Morning Fare': 10, 'Minor stamina mead': 6 });
   assert.equal(g.raw.get('Moose meat'), 3);
   assert.equal(g.raw.get('Honey'), 10);
 });
