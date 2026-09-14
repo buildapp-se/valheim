@@ -23,7 +23,7 @@ import {
 loadItems(ITEMS);
 
 // ---- state ------------------------------------------------------------------
-type SortKey = 'total' | 'health' | 'stamina' | 'eitr' | 'healing' | 'duration';
+type SortKey = 'name' | 'health' | 'stamina' | 'eitr' | 'total' | 'healing' | 'duration' | 'station';
 interface State {
   biome: Biome | null;
   /** raw resources the player can't be bothered to fetch; everything else is on */
@@ -31,10 +31,13 @@ interface State {
   picks: Record<string, number>;
   feasts: boolean;
   sort: SortKey;
+  dir: 'asc' | 'desc';
+  /** overview: sort inside each biome group (true) or one flat list */
+  grouped: boolean;
   combos: boolean;
 }
 const KEY = 'valheim-food-planner:v1';
-const state: State = { biome: null, off: [], picks: {}, feasts: false, sort: 'total', combos: false };
+const state: State = { biome: null, off: [], picks: {}, feasts: false, sort: 'total', dir: 'desc', grouped: true, combos: false };
 try {
   const saved = localStorage.getItem(KEY);
   if (saved) Object.assign(state, JSON.parse(saved) as Partial<State>);
@@ -236,6 +239,7 @@ function renderBest(): void {
                     h('span', { class: 'n h' }, `H ${c.sum.health}`),
                     h('span', { class: 'n s' }, `S ${c.sum.stamina}`),
                     h('span', { class: 'n e' }, `E ${c.sum.eitr}`),
+                    h('span', { class: 'n t' }, `Total ${c.sum.health + c.sum.stamina + c.sum.eitr}`),
                     h('span', { class: 'n r' }, `+${c.sum.healing}/tick`),
                     h('span', { class: 'muted' }, `${mmss(c.sum.duration)} min`),
                   ),
@@ -270,43 +274,86 @@ function comboStepper(c: Combo): HTMLElement {
   );
 }
 
-const SORTS: Record<SortKey, (a: Item) => number> = {
-  total,
+/** highest level number in a station name, "Cauldron (7) + Stone oven" -> 7; 0 when there is none */
+function stationLevel(it: Item): number {
+  const levels = [...(it.recipe?.station ?? '').matchAll(/\((\d+)\)/g)].map((m) => Number(m[1]));
+  return levels.length ? Math.max(...levels) : 0;
+}
+const SORTS: Record<Exclude<SortKey, 'name'>, (a: Item) => number> = {
   health: (a) => a.food?.health ?? 0,
   stamina: (a) => a.food?.stamina ?? 0,
   eitr: (a) => a.food?.eitr ?? 0,
+  total,
   healing: (a) => a.food?.healing ?? 0,
   duration: (a) => a.food?.duration ?? 0,
+  station: stationLevel,
 };
-const COMBO_SORTS: Record<SortKey, (s: Sum) => number> = {
-  total: (s) => s.health + s.stamina + s.eitr,
-  health: (s) => s.health,
-  stamina: (s) => s.stamina,
-  eitr: (s) => s.eitr,
-  healing: (s) => s.healing,
-  duration: (s) => s.duration,
+const COMBO_SORTS: Record<Exclude<SortKey, 'name'>, (c: Combo) => number> = {
+  health: (c) => c.sum.health,
+  stamina: (c) => c.sum.stamina,
+  eitr: (c) => c.sum.eitr,
+  total: (c) => c.sum.health + c.sum.stamina + c.sum.eitr,
+  healing: (c) => c.sum.healing,
+  duration: (c) => c.sum.duration,
+  station: (c) => Math.max(...c.foods.map(stationLevel)),
 };
+const COLUMNS: Array<{ key: SortKey; label: string; numeric: boolean; cls?: string }> = [
+  { key: 'name', label: 'Food', numeric: false },
+  { key: 'health', label: 'Health', numeric: true },
+  { key: 'stamina', label: 'Stamina', numeric: true },
+  { key: 'eitr', label: 'Eitr', numeric: true },
+  { key: 'total', label: 'Total', numeric: true },
+  { key: 'healing', label: 'hp/tick', numeric: true },
+  { key: 'duration', label: 'Time', numeric: true },
+  { key: 'station', label: 'Station', numeric: false, cls: 'ing' },
+];
+
+/** first click: biggest first (A to Z for names); same column again flips it */
+function clickSort(key: SortKey): void {
+  if (state.sort === key) update({ dir: state.dir === 'asc' ? 'desc' : 'asc' });
+  else update({ sort: key, dir: key === 'name' ? 'asc' : 'desc' });
+}
+function sortHeader(col: (typeof COLUMNS)[number], label = col.label): HTMLElement {
+  const active = state.sort === col.key;
+  const arrow = active ? (state.dir === 'asc' ? '▲' : '▼') : '↕';
+  const ariaSort = active ? (state.dir === 'asc' ? 'ascending' : 'descending') : 'none';
+  return h(
+    'th',
+    { class: [col.numeric ? 'n' : '', col.cls ?? ''].join(' ').trim() || null, 'aria-sort': ariaSort },
+    h('button', { class: `sort${active ? ' active' : ''}`, onclick: () => clickSort(col.key), title: `Sort by ${label.toLowerCase()}` }, label, h('span', { class: 'arrow', 'aria-hidden': 'true' }, arrow)),
+  );
+}
 
 function renderOverview(): void {
   const vis = visibleFoods();
+  const sign = state.dir === 'asc' ? 1 : -1;
+  const check = (label: string, checked: boolean, onchange: (on: boolean) => void, disabled = false): HTMLElement =>
+    h('label', { class: disabled ? 'muted' : '' }, h('input', { type: 'checkbox', checked, disabled, onchange: (e: Event) => onchange((e.target as HTMLInputElement).checked) }), ` ${label}`);
   const head = h(
     'div',
     { class: 'head' },
-    h('h2', {}, state.combos ? 'Three-food combos, all that exist' : 'All foods'),
+    h('h2', {}, state.combos ? 'Three-food combos' : 'All foods'),
     h(
       'div',
       { class: 'controls' },
-      h('label', {}, 'Sort by ', h('select', { onchange: (e: Event) => update({ sort: (e.target as HTMLSelectElement).value as SortKey }) }, ...(Object.keys(SORTS) as SortKey[]).map((k) => h('option', { value: k, selected: k === state.sort ? '' : null }, k)))),
-      h('label', {}, h('input', { type: 'checkbox', checked: state.combos, onchange: (e: Event) => update({ combos: (e.target as HTMLInputElement).checked }) }), ' combos'),
-      h('label', {}, h('input', { type: 'checkbox', checked: state.feasts, onchange: (e: Event) => update({ feasts: (e.target as HTMLInputElement).checked }) }), ' feasts'),
+      check('per biome', state.grouped && !state.combos, (on) => update({ grouped: on }), state.combos),
+      check('combos', state.combos, (on) => update({ combos: on })),
+      check('feasts', state.feasts, (on) => update({ feasts: on })),
     ),
   );
-  const numHead = [h('th', { class: 'n' }, 'Health'), h('th', { class: 'n' }, 'Stamina'), h('th', { class: 'n' }, 'Eitr'), h('th', { class: 'n' }, 'Total'), h('th', { class: 'n' }, 'hp/tick'), h('th', { class: 'n' }, 'Time')];
   let body: HTMLElement[];
   if (state.combos) {
-    const sortBy = COMBO_SORTS[state.sort];
-    const top = bestCombos(vis, { id: 'x', label: '', hint: '', score: sortBy }, 30);
-    body = top.map((c) =>
+    // always the top 30 for the chosen column; the arrow only flips their order
+    // name and station can't pick a top 30 from summed stats alone, so they order the top 30 by total
+    const key = state.sort === 'name' || state.sort === 'station' ? 'total' : state.sort;
+    const top = bestCombos(vis, { id: 'x', label: '', hint: '', score: (s) => COMBO_SORTS[key]({ foods: [], sum: s, score: 0 }) }, 30);
+    const pick = COMBO_SORTS[state.sort === 'name' ? 'total' : state.sort];
+    const names = (c: Combo): string => c.foods.map((f) => f.name).sort().join(', ');
+    const sorted =
+      state.sort === 'name'
+        ? top.sort((a, b) => sign * names(a).localeCompare(names(b)))
+        : top.sort((a, b) => sign * (pick(a) - pick(b)) || COMBO_SORTS.total(b) - COMBO_SORTS.total(a));
+    body = sorted.map((c) =>
       h(
         'tr',
         {},
@@ -315,41 +362,51 @@ function renderOverview(): void {
         h('td', { class: 'n h' }, String(c.sum.health)),
         h('td', { class: 'n s' }, String(c.sum.stamina)),
         h('td', { class: 'n e' }, String(c.sum.eitr)),
-        h('td', { class: 'n' }, String(c.sum.health + c.sum.stamina + c.sum.eitr)),
+        h('td', { class: 'n' }, String(COMBO_SORTS.total(c))),
         h('td', { class: 'n r' }, String(c.sum.healing)),
         h('td', { class: 'n muted' }, mmss(c.sum.duration)),
+        h('td', { class: 'ing' }, COMBO_SORTS.station(c) ? `Cauldron level ${COMBO_SORTS.station(c)} or lower` : 'No cauldron'),
         h('td', {}, comboStepper(c)),
       ),
     );
   } else {
-    const sortBy = SORTS[state.sort];
+    const cmp = (a: Item, b: Item): number => {
+      const primary = state.sort === 'name' ? a.name.localeCompare(b.name) : SORTS[state.sort](a) - SORTS[state.sort](b);
+      return sign * primary || total(b) - total(a) || a.name.localeCompare(b.name);
+    };
+    const row = (f: Item): HTMLElement => {
+      const st = f.food as NonNullable<Item['food']>;
+      return h(
+        'tr',
+        {},
+        h('td', { class: 'name' }, f.name, unverifiedMark(f), st.feast ? h('span', { class: 'muted' }, ' (feast)') : null, infoMark(f), !state.grouped ? h('span', { class: 'tag' }, f.biome) : null),
+        h('td', {}, bars(st, MAX_TOTAL, MAX_REGEN)),
+        h('td', { class: 'n h' }, String(st.health)),
+        h('td', { class: 'n s' }, String(st.stamina)),
+        h('td', { class: 'n e' }, st.eitr ? String(st.eitr) : ''),
+        h('td', { class: 'n' }, String(total(f))),
+        h('td', { class: 'n r' }, String(st.healing)),
+        h('td', { class: 'n muted' }, mmss(st.duration)),
+        h('td', { class: 'ing' }, f.recipe ? `${f.recipe.station}${f.recipe.yield > 1 ? ` ×${f.recipe.yield}` : ''}: ${ingredients(f)}` : f.source ?? ''),
+        h('td', {}, h('button', { class: 'small', title: 'Add to gather list', onclick: () => addPick(f, 1) }, '+')),
+      );
+    };
     body = [];
-    for (let r = biomeRank(state.biome as Biome); r >= 0; r--) {
-      const biome = BIOMES[r] as Biome;
-      const rows = vis.filter((f) => f.biome === biome).sort((a, b) => sortBy(b) - sortBy(a) || total(b) - total(a));
-      if (rows.length === 0) continue;
-      body.push(h('tr', { class: 'group' }, h('td', { colspan: 10 }, h('h3', {}, biome))));
-      for (const f of rows) {
-        const st = f.food as NonNullable<Item['food']>;
-        body.push(
-          h(
-            'tr',
-            {},
-            h('td', { class: 'name' }, f.name, unverifiedMark(f), st.feast ? h('span', { class: 'muted' }, ' (feast)') : null, infoMark(f)),
-            h('td', {}, bars(st, MAX_TOTAL, MAX_REGEN)),
-            h('td', { class: 'n h' }, String(st.health)),
-            h('td', { class: 'n s' }, String(st.stamina)),
-            h('td', { class: 'n e' }, st.eitr ? String(st.eitr) : ''),
-            h('td', { class: 'n' }, String(total(f))),
-            h('td', { class: 'n r' }, String(st.healing)),
-            h('td', { class: 'n muted' }, mmss(st.duration)),
-            h('td', { class: 'ing' }, f.recipe ? `${f.recipe.station}${f.recipe.yield > 1 ? ` ×${f.recipe.yield}` : ''}: ${ingredients(f)}` : f.source ?? ''),
-            h('td', {}, h('button', { class: 'small', title: 'Add to gather list', onclick: () => addPick(f, 1) }, '+')),
-          ),
-        );
+    if (state.grouped) {
+      for (let r = biomeRank(state.biome as Biome); r >= 0; r--) {
+        const biome = BIOMES[r] as Biome;
+        const rows = vis.filter((f) => f.biome === biome).sort(cmp);
+        if (rows.length === 0) continue;
+        body.push(h('tr', { class: 'group' }, h('td', { colspan: 10 }, h('h3', {}, biome))), ...rows.map(row));
       }
+    } else {
+      body = [...vis].sort(cmp).map(row);
     }
   }
+  const headers = COLUMNS.map((col) =>
+    col.key === 'station' ? sortHeader(col, state.combos ? 'Station' : 'Station: ingredients') : sortHeader(col),
+  );
+  const [foodHead, ...numHeads] = headers;
   replace(
     'overview',
     head,
@@ -357,7 +414,7 @@ function renderOverview(): void {
     h(
       'div',
       { class: 'scroll', style: 'margin-top:0.6rem' },
-      h('table', {}, h('thead', {}, h('tr', {}, h('th', {}, 'Food'), h('th', {}, 'Bars'), ...numHead, h('th', { class: 'ing' }, state.combos ? '' : 'Station: ingredients'), h('th', {}, ''))), h('tbody', {}, ...body)),
+      h('table', {}, h('thead', {}, h('tr', {}, foodHead, h('th', {}, 'Bars'), ...numHeads, h('th', {}, ''))), h('tbody', {}, ...body)),
     ),
   );
 }
