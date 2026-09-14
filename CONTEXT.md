@@ -1,0 +1,40 @@
+# Valheim Food Planner
+
+Static web app at `buildapp.se/valheim/` for picking Valheim food. Unlisted on the buildapp.se front page. English only. Desktop first, works at phone width.
+
+## What it does
+
+- **Biome gate.** First visit asks for the highest biome reached. Everything from later biomes is hidden: foods, meads, resources, combos. Header has "Next biome" (one step) and "Show all".
+- **Best food.** Top 5 three-food combos per build, from dishes whose whole ingredient tree is ticked in Resources. Feasts behind a toggle, default off.
+- **Overview.** Every food grouped by biome, highest first, with a stacked bar (red health, yellow stamina, blue eitr) and a thin green hp/tick bar. Sort dropdown. "Combos" checkbox switches to the top 30 three-food sums for the sort key, ignoring the resource checklist on purpose.
+- **Gather list.** Dishes and meads with steppers that move in whole crafts (`+1`, `+5` = in-game shift-click). Output: raw resources grouped by biome with source, plus crafting order.
+- **Resources.** Checklist of raw resources up to your biome, all ticked by default, each with a one-line source.
+
+## Build scores
+
+Three foods, summed. Decided in the grill 2026-09-14.
+
+| Build | Score |
+|---|---|
+| Max health / stamina / eitr | that stat |
+| Warrior | H + S − abs(H − S) |
+| Mage | 2E + H + S − abs(H − S) |
+| Max total | H + S + E |
+
+Ties break on summed hp/tick, then on the shortest duration.
+
+## Architecture
+
+- Vanilla TypeScript, `strict`, compiled by `tsc` to `dist/`. No framework, no bundler, no backend.
+- `src/model.ts`: types, recipe expansion (`gather`), scoring (`BUILDS`, `bestCombos`). No DOM, so `test.mjs` runs it in node.
+- `src/data.ts`: every item. One `Item` is a raw resource (`source`), a crafted intermediate (`recipe`), a food (`food`, optionally with `recipe`) or a mead (`mead` + `recipe`). Material names must match an item name exactly.
+- `src/app.ts`: all rendering. State in `localStorage` key `valheim-food-planner:v1`.
+- Deploy: GitHub Actions builds, runs `npm test`, publishes `index.html`, `style.css` and `dist/*.js` to Pages. A failing check blocks the deploy.
+
+## Data
+
+Source: the Food and Mead tables on `valheim.weirdgloop.org` (CC BY-NC-SA), read 2026-09-14, Valheim 1.0.12. That wiki is the only one with Deep North rows; Fandom stops at Ashlands, wiki.gg blocks scripted reads. Resource sources come from each item's wiki page. Credit is in the footer.
+
+`biome` means the progression tier the wiki table gives, not where the item grows. Egg is Plains because Haldor sells it after Yagluth.
+
+Items flagged `unverified` show a warning mark with the reason on hover. Current flags: Oatmeal stats, Pulled Bear healing, the Kale Chips recipe, and the Oat flour windmill ratio.

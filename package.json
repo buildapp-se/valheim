@@ -1,0 +1,13 @@
+{
+  "name": "valheim-food-planner",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "tsc && node test.mjs",
+    "start": "npx -y serve -l 8787 ."
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}
