@@ -11,14 +11,25 @@ import {
   servings,
   rawMaterials,
   snap,
-  sumOf,
   type Biome,
   type Build,
   type Combo,
   type CraftStep,
   type Item,
-  type Sum,
 } from './model.js';
+import {
+  BIOME_BLURB,
+  BIOME_INDEX,
+  biomeIcon,
+  closePopover,
+  h,
+  ic,
+  mark,
+  raw,
+  replace,
+  stationIcon,
+  unverifiedMark,
+} from './ui.js';
 
 loadItems(ITEMS);
 
@@ -65,6 +76,10 @@ function update(patch: Partial<State>): void {
   render();
 }
 
+/** view-only state: never persisted, never part of a URL */
+let pickerChoice: Biome | null = null;
+const expanded = new Set<string>();
+
 // ---- derived --------------------------------------------------------------------
 const foods = ITEMS.filter((i) => i.food);
 const meads = ITEMS.filter((i) => i.mead);
@@ -104,39 +119,16 @@ function combosFor(build: Build): Combo[] {
   return comboCache.result.get(build.id) ?? [];
 }
 
-// ---- tiny DOM helper ----------------------------------------------------------------
-type Child = Node | string | null | undefined | false | Child[];
-function h(tag: string, attrs: Record<string, unknown> = {}, ...children: Child[]): HTMLElement {
-  const el = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
-    if (v === null || v === undefined || v === false) continue;
-    if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v as EventListener);
-    else if (k === 'class') el.className = String(v);
-    else if (k === 'checked' || k === 'disabled' || k === 'hidden') (el as unknown as Record<string, unknown>)[k] = v;
-    else if (k === 'value') (el as HTMLInputElement).value = String(v);
-    else el.setAttribute(k, String(v));
-  }
-  const append = (c: Child): void => {
-    if (c === null || c === undefined || c === false) return;
-    if (Array.isArray(c)) c.forEach(append);
-    else el.append(c instanceof Node ? c : document.createTextNode(c));
-  };
-  children.forEach(append);
-  return el;
-}
-function replace(id: string, ...children: Child[]): HTMLElement {
-  const el = document.getElementById(id) as HTMLElement;
-  el.replaceChildren(...Array.from(h('div', {}, ...children).childNodes));
-  return el;
-}
-
+// ---- shared pieces --------------------------------------------------------------
 function bars(s: { health: number; stamina: number; eitr: number; healing: number }, scale: number, regenScale: number): HTMLElement {
   const pct = (v: number): string => `${Math.min(100, (100 * v) / scale)}%`;
+  const seg = (cls: string, v: number, label: string): HTMLElement =>
+    h('span', { class: cls, style: `width:${pct(v)}`, title: `${label} ${v}`, 'aria-label': `${label} ${v}` });
   return h(
     'div',
     { class: 'bars' },
-    h('div', { class: 'bar' }, h('span', { class: 'h', style: `width:${pct(s.health)}` }), h('span', { class: 's', style: `width:${pct(s.stamina)}` }), h('span', { class: 'e', style: `width:${pct(s.eitr)}` })),
-    h('div', { class: 'regen' }, h('span', { style: `width:${pct((s.healing * scale) / regenScale)}` })),
+    h('div', { class: 'bar' }, seg('h', s.health, 'Health'), seg('s', s.stamina, 'Stamina'), seg('e', s.eitr, 'Eitr')),
+    h('div', { class: 'regen' }, h('span', { style: `width:${pct((s.healing * scale) / regenScale)}`, title: `${s.healing} hp/tick`, 'aria-label': `${s.healing} hp per tick` })),
   );
 }
 const legend = (): HTMLElement =>
@@ -148,10 +140,23 @@ const legend = (): HTMLElement =>
     h('span', {}, h('i', { style: 'background:var(--eitr)' }), 'eitr'),
     h('span', {}, h('i', { style: 'background:var(--regen)' }), 'hp/tick (thin bar)'),
   );
-const unverifiedMark = (it: Item): HTMLElement | null => {
-  const note = it.food?.unverified ?? it.unverified;
-  return note ? h('span', { class: 'warn', title: note }, ' ⚠') : null;
-};
+
+/** the six stat slots, always in the same order so the eye compares down the column */
+function statSlots(s: { health: number; stamina: number; eitr: number; healing: number; duration: number }): HTMLElement {
+  const slot = (cls: string, icon: string, text: string, label: string): HTMLElement =>
+    h('span', { class: `n ${cls}`, title: label }, ic(icon, 'ic-14'), text);
+  return h(
+    'div',
+    { class: 'sum' },
+    slot('h', 'icon-health', String(s.health), 'Health'),
+    slot('s', 'icon-stamina', String(s.stamina), 'Stamina'),
+    slot('e', 'icon-eitr', String(s.eitr), 'Eitr'),
+    slot('t', 'icon-total', String(s.health + s.stamina + s.eitr), 'Total'),
+    slot('r', 'icon-regen', `+${s.healing}/tick`, 'Health per tick'),
+    slot('d', 'icon-duration', mmss(s.duration), 'Duration'),
+  );
+}
+
 /** why a dish doesn't step by 1; null for ordinary dishes */
 function stepNote(it: Item): string | null {
   const y = it.recipe?.yield ?? 1;
@@ -161,44 +166,125 @@ function stepNote(it: Item): string | null {
 }
 const infoMark = (it: Item): HTMLElement | null => {
   const note = stepNote(it);
-  return note ? h('span', { class: 'info', tabindex: 0, role: 'note', 'aria-label': note, 'data-tip': note }, 'i') : null;
+  return note ? mark('ui-info', 'info', `Why ${it.name} steps in ${portionStep(it)}s`, note) : null;
 };
+const feastTag = (it: Item): HTMLElement | null =>
+  it.food?.feast ? h('span', { class: 'tag-feast' }, ic('ui-feast', 'ic-13'), 'FEAST') : null;
+
 const ingredients = (it: Item): string =>
   Object.entries(it.recipe?.materials ?? {})
     .map(([m, q]) => `${q}× ${m}`)
     .join(', ') || (it.source ?? '');
 
-// ---- sections ----------------------------------------------------------------------------
+/** "Cauldron (2): 1× Mushroom, 1× Honey" — the line under a dish and in the overview */
+function stationLine(it: Item): string {
+  if (!it.recipe) return it.source ?? '';
+  const y = it.recipe.yield;
+  return `${it.recipe.station}${y > 1 && !it.mead ? ` ×${y}` : ''}: ${ingredients(it)}`;
+}
+
+// ---- header -----------------------------------------------------------------------
 function renderBiome(): void {
   const b = state.biome;
   const idx = b === null ? -1 : biomeRank(b);
   (document.getElementById('biome-control') as HTMLElement).hidden = b === null;
+  if (b === null) {
+    replace('biome-control');
+    return;
+  }
   replace(
     'biome-control',
-    h('span', { class: 'muted' }, 'Highest biome reached:'),
+    h('span', { class: 'spoiler-chip' }, `Spoilers: ${b} and earlier`),
     h(
-      'select',
-      { onchange: (e: Event) => update({ biome: (e.target as HTMLSelectElement).value as Biome }) },
-      ...BIOMES.map((x) => h('option', { value: x, selected: x === b ? '' : null }, x)),
+      'span',
+      { class: 'pick' },
+      ic(biomeIcon(b), 'ic-16'),
+      h(
+        'select',
+        { 'aria-label': 'Highest biome reached', onchange: (e: Event) => update({ biome: (e.target as HTMLSelectElement).value as Biome }) },
+        ...BIOMES.map((x) => h('option', { value: x, selected: x === b ? '' : null }, x)),
+      ),
     ),
-    idx >= 0 && idx < BIOMES.length - 1 && h('button', { onclick: () => update({ biome: BIOMES[idx + 1] as Biome }) }, `Next: ${BIOMES[idx + 1]} ›`),
-    idx < BIOMES.length - 1 && h('button', { onclick: () => update({ biome: 'Deep North' }) }, 'Show all'),
+    idx < BIOMES.length - 1 &&
+      h('button', { class: 'primary', onclick: () => update({ biome: BIOMES[idx + 1] as Biome }) }, `Next: ${BIOMES[idx + 1]}`, ic('ui-next', 'ic-14')),
+    idx < BIOMES.length - 1 && h('button', { onclick: () => update({ biome: 'Deep North' }) }, ic('ui-show-all', 'ic-14'), 'Show all'),
   );
 }
+
+// ---- first visit -------------------------------------------------------------------
+/** flat polygons for the ridge line, hairline rules for cold mist; no image file, no host */
+const RIDGE = `<svg class="ridge" viewBox="0 0 1400 440" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+  <polygon points="0,440 250,208 470,440" fill="#14171c"></polygon>
+  <polygon points="300,440 620,150 940,440" fill="#1b1f26"></polygon>
+  <polygon points="820,440 1080,232 1400,440" fill="#14171c"></polygon>
+  <polygon points="560,196 620,150 680,196 650,214 620,190 590,214" fill="#2a3038"></polygon>
+  <rect x="0" y="318" width="1400" height="2" fill="#2a3038" opacity=".55"></rect>
+  <rect x="0" y="352" width="1400" height="2" fill="#2a3038" opacity=".4"></rect>
+  <rect x="0" y="386" width="1400" height="2" fill="#2a3038" opacity=".25"></rect>
+</svg>`;
 
 function renderPicker(): void {
   const el = document.getElementById('picker') as HTMLElement;
   el.hidden = state.biome !== null;
   for (const id of ['best', 'overview', 'gather', 'resources']) (document.getElementById(id) as HTMLElement).hidden = state.biome === null;
   if (state.biome !== null) return;
+  const chosen = pickerChoice;
   replace(
     'picker',
-    h('h2', {}, 'Where are you in Valheim?'),
-    h('p', {}, 'Pick the highest biome you have reached. Everything from later biomes stays hidden so nothing spoils you. You can move it one step at a time from the top of the page.'),
-    h('div', { class: 'choices' }, ...BIOMES.map((x) => h('button', { class: 'primary', onclick: () => update({ biome: x }) }, x))),
+    h(
+      'div',
+      { class: 'hero' },
+      h('div', { class: 'glow' }),
+      raw(RIDGE),
+      h('div', { class: 'eyebrow' }, ic('app-icon'), h('span', {}, 'FAN TOOL · NO ADS · NO COOKIES')),
+      h('h2', {}, 'Three foods.', h('br'), 'The right three.'),
+      h('p', {}, 'Pick your build, take the combo, and walk out with a gather list of exactly what to farm — nothing from biomes you have not reached.'),
+    ),
+    h(
+      'div',
+      { class: 'intro' },
+      h('h2', {}, 'How far have you come?'),
+      h(
+        'p',
+        {},
+        'Pick the furthest biome you have reached. Everything past it stays hidden — no foods, no ingredients, no bosses you have not met. You can change this any time from the header.',
+      ),
+    ),
+    h(
+      'div',
+      { class: 'choices' },
+      ...BIOMES.map((x) =>
+        h(
+          'button',
+          {
+            class: 'tile',
+            type: 'button',
+            'aria-pressed': String(chosen === x),
+            onclick: () => {
+              pickerChoice = x;
+              renderPicker();
+            },
+          },
+          h('span', { class: 'tile-top' }, ic(biomeIcon(x)), h('span', { class: 'num' }, String(BIOME_INDEX.get(x)).padStart(2, '0'))),
+          h('span', {}, h('span', { class: 'nm' }, x), h('span', { class: 'sub' }, BIOME_BLURB[x])),
+        ),
+      ),
+    ),
+    h(
+      'div',
+      { class: 'go' },
+      h(
+        'button',
+        { class: 'primary', disabled: chosen === null, onclick: () => chosen && update({ biome: chosen }) },
+        chosen ? `Continue to ${chosen}` : 'Pick a biome to continue',
+        ic('ui-next', 'ic-18'),
+      ),
+      h('button', { onclick: () => update({ biome: 'Deep North' }) }, ic('ui-show-all', 'ic-18'), "Show everything, I don't mind spoilers"),
+    ),
   );
 }
 
+// ---- best food ----------------------------------------------------------------------
 function renderBest(): void {
   const cand = visibleFoods();
   const off = state.off.length;
@@ -207,43 +293,33 @@ function renderBest(): void {
     h(
       'div',
       { class: 'head' },
-      h('h2', {}, 'Best food you can make'),
+      h('h2', {}, 'Best food'),
       h(
-        'div',
-        { class: 'controls' },
-        h('span', { class: 'muted' }, `${cand.length} foods from your resources${off ? `, ${off} resource${off > 1 ? 's' : ''} skipped` : ''}`),
-        h('label', {}, h('input', { type: 'checkbox', checked: state.feasts, onchange: (e: Event) => update({ feasts: (e.target as HTMLInputElement).checked }) }), ' include feasts'),
+        'label',
+        { class: 'check' },
+        h('input', { type: 'checkbox', checked: state.feasts, onchange: (e: Event) => update({ feasts: (e.target as HTMLInputElement).checked }) }),
+        'Include feasts',
       ),
+      h('span', { class: 'count-note' }, `${cand.length} foods from your resources${off ? `, ${off} resource${off > 1 ? 's' : ''} skipped` : ''}`),
     ),
     legend(),
     h(
       'div',
-      { class: 'builds', style: 'margin-top:0.6rem' },
+      { class: 'builds' },
       ...BUILDS.map((b) => {
         const combos = combosFor(b);
         return h(
           'div',
-          { class: 'build' },
-          h('h3', {}, b.label),
-          h('div', { class: 'hint' }, b.hint),
+          { class: 'build card' },
+          h('div', { class: 'title' }, ic(buildIcon(b.id), 'ic-20'), h('h3', {}, b.label), h('span', { class: 'hint' }, b.hint)),
           combos.length === 0
             ? h('div', { class: 'empty' }, 'Fewer than three foods available. Tick more resources.')
             : combos.map((c) =>
                 h(
                   'div',
                   { class: 'combo' },
-                  h('div', { class: 'foods' }, ...c.foods.map((f) => h('span', { class: 'chip' }, f.name, unverifiedMark(f)))),
-                  h(
-                    'div',
-                    { class: 'sum' },
-                    h('span', { class: 'n h' }, `H ${c.sum.health}`),
-                    h('span', { class: 'n s' }, `S ${c.sum.stamina}`),
-                    h('span', { class: 'n e' }, `E ${c.sum.eitr}`),
-                    h('span', { class: 'n t' }, `Total ${c.sum.health + c.sum.stamina + c.sum.eitr}`),
-                    h('span', { class: 'n r' }, `+${c.sum.healing}/tick`),
-                    h('span', { class: 'muted' }, `${mmss(c.sum.duration)} min`),
-                  ),
-                  comboStepper(c),
+                  h('div', { class: 'foods' }, ...c.foods.map((f) => [h('span', { class: `chip${f.food?.feast ? ' feast' : ''}` }, f.food?.feast ? ic('ui-feast', 'ic-13') : null, f.name), unverifiedMark(f)])),
+                  h('div', { class: 'row2' }, statSlots(c.sum), comboStepper(c)),
                   bars(c.sum, MAX_TOTAL * 3, MAX_REGEN * 3),
                 ),
               ),
@@ -252,6 +328,20 @@ function renderBest(): void {
     ),
   );
 }
+function buildIcon(id: string): string {
+  switch (id) {
+    case 'health':
+      return 'icon-health';
+    case 'stamina':
+      return 'icon-stamina';
+    case 'eitr':
+    case 'mage':
+      return 'icon-eitr';
+    default:
+      return 'icon-total';
+  }
+}
+
 /** add (+1) or remove (-1) one craft of each food in the combo */
 function stepCombo(c: Combo, dir: 1 | -1): void {
   const picks = { ...state.picks };
@@ -268,12 +358,13 @@ function comboStepper(c: Combo): HTMLElement {
   return h(
     'span',
     { class: 'stepper', title: 'One craft of each food, in the gather list' },
-    h('button', { class: 'small', onclick: () => stepCombo(c, -1), disabled: c.foods.every((f) => !state.picks[f.name]) }, '−'),
+    h('button', { type: 'button', 'aria-label': 'Remove one round', onclick: () => stepCombo(c, -1), disabled: c.foods.every((f) => !state.picks[f.name]) }, ic('ui-remove', 'ic-14')),
     h('b', { class: 'count' }, String(n)),
-    h('button', { class: 'small', onclick: () => stepCombo(c, 1) }, '+'),
+    h('button', { type: 'button', class: 'plus', 'aria-label': 'Add one round', onclick: () => stepCombo(c, 1) }, ic('ui-add', 'ic-14')),
   );
 }
 
+// ---- overview -------------------------------------------------------------------------
 /** highest level number in a station name, "Cauldron (7) + Stone oven" -> 7; 0 when there is none */
 function stationLevel(it: Item): number {
   const levels = [...(it.recipe?.station ?? '').matchAll(/\((\d+)\)/g)].map((m) => Number(m[1]));
@@ -298,13 +389,13 @@ const COMBO_SORTS: Record<Exclude<SortKey, 'name'>, (c: Combo) => number> = {
   station: (c) => Math.max(...c.foods.map(stationLevel)),
 };
 const COLUMNS: Array<{ key: SortKey; label: string; numeric: boolean; cls?: string }> = [
-  { key: 'name', label: 'Food', numeric: false },
+  { key: 'name', label: 'Food', numeric: false, cls: 'col-name' },
   { key: 'health', label: 'Health', numeric: true },
   { key: 'stamina', label: 'Stamina', numeric: true },
   { key: 'eitr', label: 'Eitr', numeric: true },
   { key: 'total', label: 'Total', numeric: true },
   { key: 'healing', label: 'hp/tick', numeric: true },
-  { key: 'duration', label: 'Time', numeric: true },
+  { key: 'duration', label: 'Time', numeric: true, cls: 'col-time' },
   { key: 'station', label: 'Station', numeric: false, cls: 'ing' },
 ];
 
@@ -315,12 +406,17 @@ function clickSort(key: SortKey): void {
 }
 function sortHeader(col: (typeof COLUMNS)[number], label = col.label): HTMLElement {
   const active = state.sort === col.key;
-  const arrow = active ? (state.dir === 'asc' ? '▲' : '▼') : '↕';
+  const arrow = active ? (state.dir === 'asc' ? 'ui-sort-asc' : 'ui-sort-desc') : 'ui-sort-idle';
   const ariaSort = active ? (state.dir === 'asc' ? 'ascending' : 'descending') : 'none';
   return h(
     'th',
-    { class: [col.numeric ? 'n' : '', col.cls ?? ''].join(' ').trim() || null, 'aria-sort': ariaSort },
-    h('button', { class: `sort${active ? ' active' : ''}`, onclick: () => clickSort(col.key), title: `Sort by ${label.toLowerCase()}` }, label, h('span', { class: 'arrow', 'aria-hidden': 'true' }, arrow)),
+    { class: [col.numeric ? 'n' : '', col.cls ?? ''].join(' ').trim() || null, 'aria-sort': ariaSort, scope: 'col' },
+    h(
+      'button',
+      { type: 'button', class: `sort${active ? ' active' : ''}`, onclick: () => clickSort(col.key), title: `Sort by ${label.toLowerCase()}` },
+      label,
+      h('span', { class: 'arrow' }, ic(arrow, 'ic-13')),
+    ),
   );
 }
 
@@ -328,20 +424,17 @@ function renderOverview(): void {
   const vis = visibleFoods();
   const sign = state.dir === 'asc' ? 1 : -1;
   const check = (label: string, checked: boolean, onchange: (on: boolean) => void, disabled = false): HTMLElement =>
-    h('label', { class: disabled ? 'muted' : '' }, h('input', { type: 'checkbox', checked, disabled, onchange: (e: Event) => onchange((e.target as HTMLInputElement).checked) }), ` ${label}`);
+    h('label', { class: `check${disabled ? ' muted' : ''}` }, h('input', { type: 'checkbox', checked, disabled, onchange: (e: Event) => onchange((e.target as HTMLInputElement).checked) }), label);
   const head = h(
     'div',
     { class: 'head' },
-    h('h2', {}, state.combos ? 'Three-food combos' : 'All foods'),
-    h(
-      'div',
-      { class: 'controls' },
-      check('per biome', state.grouped && !state.combos, (on) => update({ grouped: on }), state.combos),
-      check('combos', state.combos, (on) => update({ combos: on })),
-      check('feasts', state.feasts, (on) => update({ feasts: on })),
-    ),
+    h('h2', {}, state.combos ? 'Three-food combos' : 'Overview'),
+    check('Per biome', state.grouped && !state.combos, (on) => update({ grouped: on }), state.combos),
+    check('Combos', state.combos, (on) => update({ combos: on })),
+    check('Feasts', state.feasts, (on) => update({ feasts: on })),
   );
-  let body: HTMLElement[];
+
+  const body: HTMLElement[] = [];
   if (state.combos) {
     // always the top 30 for the chosen column; the arrow only flips their order
     // name and station can't pick a top 30 from summed stats alone, so they order the top 30 by total
@@ -353,20 +446,22 @@ function renderOverview(): void {
       state.sort === 'name'
         ? top.sort((a, b) => sign * names(a).localeCompare(names(b)))
         : top.sort((a, b) => sign * (pick(a) - pick(b)) || COMBO_SORTS.total(b) - COMBO_SORTS.total(a));
-    body = sorted.map((c) =>
-      h(
-        'tr',
-        {},
-        h('td', { class: 'name' }, h('div', { class: 'foods' }, ...c.foods.map((f) => h('span', { class: 'chip' }, f.name, unverifiedMark(f))))),
-        h('td', {}, bars(c.sum, MAX_TOTAL * 3, MAX_REGEN * 3)),
-        h('td', { class: 'n h' }, String(c.sum.health)),
-        h('td', { class: 'n s' }, String(c.sum.stamina)),
-        h('td', { class: 'n e' }, String(c.sum.eitr)),
-        h('td', { class: 'n' }, String(COMBO_SORTS.total(c))),
-        h('td', { class: 'n r' }, String(c.sum.healing)),
-        h('td', { class: 'n muted' }, mmss(c.sum.duration)),
-        h('td', { class: 'ing' }, COMBO_SORTS.station(c) ? `Cauldron level ${COMBO_SORTS.station(c)} or lower` : 'No cauldron'),
-        h('td', {}, comboStepper(c)),
+    body.push(
+      ...sorted.map((c) =>
+        h(
+          'tr',
+          {},
+          h('td', { class: 'name' }, h('div', { class: 'rowname' }, ...c.foods.map((f) => [h('span', { class: 'chip' }, f.name), unverifiedMark(f)]))),
+          h('td', { class: 'col-bars' }, bars(c.sum, MAX_TOTAL * 3, MAX_REGEN * 3)),
+          h('td', { class: 'n num h' }, String(c.sum.health)),
+          h('td', { class: 'n num s' }, String(c.sum.stamina)),
+          h('td', { class: 'n num e' }, String(c.sum.eitr)),
+          h('td', { class: 'n num' }, String(COMBO_SORTS.total(c))),
+          h('td', { class: 'n num r' }, String(c.sum.healing)),
+          h('td', { class: 'n num d col-time' }, mmss(c.sum.duration)),
+          h('td', { class: 'ing' }, h('div', { class: 'inner' }, ic('station-cauldron', 'ic-15'), COMBO_SORTS.station(c) ? `Cauldron level ${COMBO_SORTS.station(c)} or lower` : 'No cauldron')),
+          h('td', { class: 'add' }, comboStepper(c)),
+        ),
       ),
     );
   } else {
@@ -374,38 +469,94 @@ function renderOverview(): void {
       const primary = state.sort === 'name' ? a.name.localeCompare(b.name) : SORTS[state.sort](a) - SORTS[state.sort](b);
       return sign * primary || total(b) - total(a) || a.name.localeCompare(b.name);
     };
-    const row = (f: Item): HTMLElement => {
+    const rows = (f: Item): HTMLElement[] => {
       const st = f.food as NonNullable<Item['food']>;
-      return h(
+      const open = expanded.has(f.name);
+      const sIcon = stationIcon(f.recipe?.station);
+      const panel = h(
+        'tr',
+        { class: `panel${open ? ' open' : ''}` },
+        h(
+          'td',
+          { colspan: 10 },
+          h(
+            'div',
+            { class: 'grid' },
+            h('span', { class: 'k' }, 'Bars'),
+            bars(st, MAX_TOTAL, MAX_REGEN),
+            h('span', { class: 'k' }, 'Time'),
+            h('span', { class: 'num' }, mmss(st.duration)),
+            h('span', { class: 'k' }, f.recipe ? 'Station' : 'Source'),
+            h('span', {}, stationLine(f)),
+            h('span', { class: 'k' }, 'Add'),
+            h('span', {}, h('button', { type: 'button', class: 'small', onclick: () => addPick(f, 1) }, ic('ui-add', 'ic-15'), 'Add to gather list')),
+          ),
+        ),
+      );
+      const toggle = h(
+        'button',
+        {
+          type: 'button',
+          class: 'expand',
+          'aria-expanded': String(open),
+          'aria-label': `More about ${f.name}`,
+          onclick: () => {
+            if (expanded.has(f.name)) expanded.delete(f.name);
+            else expanded.add(f.name);
+            panel.classList.toggle('open');
+            toggle.setAttribute('aria-expanded', String(expanded.has(f.name)));
+          },
+        },
+        ic('ui-sort-desc', 'ic-15'),
+      );
+      const row = h(
         'tr',
         {},
-        h('td', { class: 'name' }, f.name, unverifiedMark(f), st.feast ? h('span', { class: 'muted' }, ' (feast)') : null, infoMark(f), !state.grouped ? h('span', { class: 'tag' }, f.biome) : null),
-        h('td', {}, bars(st, MAX_TOTAL, MAX_REGEN)),
-        h('td', { class: 'n h' }, String(st.health)),
-        h('td', { class: 'n s' }, String(st.stamina)),
-        h('td', { class: 'n e' }, st.eitr ? String(st.eitr) : ''),
-        h('td', { class: 'n' }, String(total(f))),
-        h('td', { class: 'n r' }, String(st.healing)),
-        h('td', { class: 'n muted' }, mmss(st.duration)),
-        h('td', { class: 'ing' }, f.recipe ? `${f.recipe.station}${f.recipe.yield > 1 ? ` ×${f.recipe.yield}` : ''}: ${ingredients(f)}` : f.source ?? ''),
-        h('td', {}, h('button', { class: 'small', title: 'Add to gather list', onclick: () => addPick(f, 1) }, '+')),
+        h(
+          'td',
+          { class: 'name' },
+          h(
+            'div',
+            { class: 'rowname' },
+            f.name,
+            feastTag(f),
+            unverifiedMark(f),
+            infoMark(f),
+            !state.grouped ? h('span', { class: 'tag' }, f.biome) : null,
+            toggle,
+          ),
+        ),
+        h('td', { class: 'col-bars' }, bars(st, MAX_TOTAL, MAX_REGEN)),
+        h('td', { class: 'n num h' }, String(st.health)),
+        h('td', { class: 'n num s' }, String(st.stamina)),
+        h('td', { class: 'n num e' }, st.eitr ? String(st.eitr) : ''),
+        h('td', { class: 'n num' }, String(total(f))),
+        h('td', { class: 'n num r' }, String(st.healing)),
+        h('td', { class: 'n num d col-time' }, mmss(st.duration)),
+        h('td', { class: 'ing' }, h('div', { class: 'inner' }, sIcon ? ic(sIcon, 'ic-15') : null, stationLine(f))),
+        h('td', { class: 'add' }, h('button', { type: 'button', class: 'small', title: 'Add to gather list', 'aria-label': `Add ${f.name} to the gather list`, onclick: () => addPick(f, 1) }, ic('ui-add', 'ic-15'))),
       );
+      return [row, panel];
     };
-    body = [];
     if (state.grouped) {
       for (let r = biomeRank(state.biome as Biome); r >= 0; r--) {
         const biome = BIOMES[r] as Biome;
-        const rows = vis.filter((f) => f.biome === biome).sort(cmp);
-        if (rows.length === 0) continue;
-        body.push(h('tr', { class: 'group' }, h('td', { colspan: 10 }, h('h3', {}, biome))), ...rows.map(row));
+        const list = vis.filter((f) => f.biome === biome).sort(cmp);
+        if (list.length === 0) continue;
+        body.push(
+          h(
+            'tr',
+            { class: 'group' },
+            h('td', { colspan: 10 }, h('div', { class: 'gh' }, ic(biomeIcon(biome), 'ic-18'), h('h3', {}, biome), h('span', { class: 'cnt' }, `${list.length} foods`))),
+          ),
+          ...list.flatMap(rows),
+        );
       }
     } else {
-      body = [...vis].sort(cmp).map(row);
+      body.push(...[...vis].sort(cmp).flatMap(rows));
     }
   }
-  const headers = COLUMNS.map((col) =>
-    col.key === 'station' ? sortHeader(col, state.combos ? 'Station' : 'Station: ingredients') : sortHeader(col),
-  );
+  const headers = COLUMNS.map((col) => (col.key === 'station' ? sortHeader(col, state.combos ? 'Station' : 'Station: ingredients') : sortHeader(col)));
   const [foodHead, ...numHeads] = headers;
   replace(
     'overview',
@@ -413,12 +564,23 @@ function renderOverview(): void {
     legend(),
     h(
       'div',
-      { class: 'scroll', style: 'margin-top:0.6rem' },
-      h('table', {}, h('thead', {}, h('tr', {}, foodHead, h('th', {}, 'Bars'), ...numHeads, h('th', {}, ''))), h('tbody', {}, ...body)),
+      { class: 'tablewrap' },
+      h(
+        'div',
+        { class: 'scroll' },
+        h(
+          'table',
+          {},
+          h('thead', {}, h('tr', {}, foodHead as HTMLElement, h('th', { class: 'plain col-bars', scope: 'col' }, 'Bars'), ...numHeads, h('th', { class: 'plain col-add', scope: 'col' }, h('span', { class: 'muted' }, 'Add')))),
+          h('tbody', {}, ...body),
+        ),
+      ),
+      h('span', { class: 'fade' }),
     ),
   );
 }
 
+// ---- gather ---------------------------------------------------------------------------
 function addPick(it: Item, crafts: number): void {
   const picks = { ...state.picks };
   const next = Math.max(0, (picks[it.name] ?? 0) + crafts * portionStep(it));
@@ -431,9 +593,9 @@ function stepper(it: Item): HTMLElement {
   const step = portionStep(it);
   return h(
     'span',
-    { class: 'stepper' },
-    h('button', { class: 'small', onclick: () => addPick(it, -5), disabled: n === 0 }, `−${5 * step}`),
-    h('button', { class: 'small', onclick: () => addPick(it, -1), disabled: n === 0 }, `−${step}`),
+    { class: 'stepper wide' },
+    h('button', { type: 'button', class: 'big', 'aria-label': `Remove ${5 * step} ${it.name}`, onclick: () => addPick(it, -5), disabled: n === 0 }, `−${5 * step}`),
+    h('button', { type: 'button', 'aria-label': `Remove ${step} ${it.name}`, onclick: () => addPick(it, -1), disabled: n === 0 }, `−${step}`),
     h('input', {
       type: 'number',
       min: 0,
@@ -448,16 +610,32 @@ function stepper(it: Item): HTMLElement {
         update({ picks });
       },
     }),
-    h('button', { class: 'small', onclick: () => addPick(it, 1) }, `+${step}`),
-    h('button', { class: 'small', onclick: () => addPick(it, 5), title: 'Five crafts, like shift-click in the game' }, `+${5 * step}`),
+    h('button', { type: 'button', class: 'plus', 'aria-label': `Add ${step} ${it.name}`, onclick: () => addPick(it, 1) }, `+${step}`),
+    h('button', { type: 'button', class: 'plus big', title: 'Five crafts, like shift-click in the game', 'aria-label': `Add ${5 * step} ${it.name}`, onclick: () => addPick(it, 5) }, `+${5 * step}`),
   );
 }
 function pickRow(it: Item): HTMLElement {
-  const y = it.recipe?.yield ?? 1;
-  // meads: effect on the name line, station and ingredients on the second line, same as foods
-  const sub = it.recipe ? `${it.recipe.station}${y > 1 && !it.mead ? `, ${y} per craft` : ''}: ${ingredients(it)}` : it.source ?? '';
-  const effect = it.mead ? h('span', { class: 'effect' }, it.mead.effect) : null;
-  return h('div', { class: `row${(state.picks[it.name] ?? 0) > 0 ? ' picked' : ''}` }, h('span', {}, it.name, unverifiedMark(it), infoMark(it), effect, h('span', { class: 'sub' }, sub)), stepper(it));
+  const sIcon = stationIcon(it.recipe?.station);
+  return h(
+    'div',
+    { class: `row${(state.picks[it.name] ?? 0) > 0 ? ' picked' : ''}` },
+    h(
+      'div',
+      { class: 'meta' },
+      h(
+        'div',
+        { class: 'nm' },
+        it.mead ? ic('ui-mead', 'ic-16 mead') : null,
+        it.name,
+        feastTag(it),
+        unverifiedMark(it),
+        infoMark(it),
+        it.mead ? h('span', { class: 'effect' }, it.mead.effect) : null,
+      ),
+      h('div', { class: 'sub' }, sIcon ? ic(sIcon, 'ic-14') : null, stationLine(it)),
+    ),
+    stepper(it),
+  );
 }
 
 function craftText(s: CraftStep): string {
@@ -466,6 +644,7 @@ function craftText(s: CraftStep): string {
 }
 function renderGather(): void {
   const picked = Object.entries(state.picks).filter(([, n]) => n > 0);
+  const portions = picked.reduce((a, [, n]) => a + n, 0);
   const g = gather(state.picks);
   const rawByBiome = new Map<Biome, Array<[string, number]>>();
   for (const [name, n] of [...g.raw.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
@@ -476,51 +655,82 @@ function renderGather(): void {
   const visMeads = meads.filter((m) => inBiome(m) && canMake(m)).sort((a, b) => biomeRank(b.biome) - biomeRank(a.biome) || a.name.localeCompare(b.name));
   replace(
     'gather',
-    h('div', { class: 'head' }, h('h2', {}, 'Gather list'), picked.length > 0 && h('button', { onclick: () => update({ picks: {} }) }, 'Clear')),
-    h('p', { class: 'muted', style: 'margin:0 0 0.6rem' }, 'Counts are portions, one per thing you eat. Dishes marked i come in bigger steps: hover or tap it to see why. The biggest button is five crafts, like shift-click. The right side is what to bring home and in which order to craft it.'),
+    h(
+      'div',
+      { class: 'head' },
+      h('h2', {}, 'Gather list'),
+      h('span', { class: 'mono muted' }, `${picked.length} ${picked.length === 1 ? 'entry' : 'entries'} · ${portions} portions`),
+      picked.length > 0 &&
+        h('span', { class: 'controls right' }, h('button', { class: 'small danger', onclick: () => update({ picks: {} }) }, ic('ui-clear', 'ic-14'), 'Clear')),
+    ),
+    h(
+      'p',
+      { class: 'lede' },
+      'Counts are portions, one per thing you eat. Dishes marked with an i come in bigger steps — open it to see why. The biggest button is five crafts, like shift-click. The right side is what to bring home, and in which order to craft it.',
+    ),
     h(
       'div',
       { class: 'gather' },
       h(
         'div',
-        {},
-        h('h3', {}, 'Dishes'),
+        { class: 'list-col' },
+        h('div', { class: 'colhead' }, 'Dishes'),
         h('div', { class: 'list' }, ...visFoods.map(pickRow)),
-        h('h3', {}, 'Meads'),
+        h('div', { class: 'colhead', style: 'margin-top:20px' }, 'Meads'),
         h('div', { class: 'list' }, ...visMeads.map(pickRow)),
       ),
       h(
         'div',
         { class: 'result' },
+        h('div', { class: 'colhead' }, 'Raw resources'),
         picked.length === 0
           ? h('div', { class: 'empty' }, 'Nothing picked yet.')
           : [
-              h('h3', {}, 'Raw resources'),
               ...[...rawByBiome.entries()]
                 .sort((a, b) => biomeRank(a[0]) - biomeRank(b[0]))
-                .map(([b, rows]) => [h('div', { class: 'muted', style: 'margin-top:0.4rem' }, b), h('ul', {}, ...rows.map(([name, n]) => h('li', {}, h('span', {}, name, h('span', { class: 'st' }, ` · ${getItem(name).source ?? ''}`)), h('b', {}, String(n)))))]),
-              h('h3', {}, 'Crafting order'),
-              h('ul', {}, ...g.steps.map((s) => h('li', {}, h('span', {}, `${s.name}`, h('span', { class: 'st' }, ` · ${s.station}`)), h('b', {}, craftText(s))))),
+                .map(([b, list]) =>
+                  h(
+                    'div',
+                    { class: 'resgroup' },
+                    h('div', { class: 'gh' }, ic(biomeIcon(b), 'ic-17'), h('h3', {}, b), h('span', { class: 'cnt' }, `${list.length} item${list.length > 1 ? 's' : ''}`)),
+                    ...list.map(([name, n]) =>
+                      h(
+                        'div',
+                        { class: 'item' },
+                        h('div', { class: 'meta' }, h('div', { class: 'nm' }, name), h('div', { class: 'src' }, getItem(name).source ?? '')),
+                        h('span', { class: 'amt' }, String(n)),
+                      ),
+                    ),
+                  ),
+                ),
+              h(
+                'div',
+                { class: 'card craft' },
+                h('div', { class: 'colhead', style: 'margin-bottom:10px' }, 'Crafting order'),
+                ...g.steps.map((s) => h('div', { class: 'step' }, h('span', {}, s.name, h('span', { class: 'st' }, ` · ${s.station}`)), h('b', {}, craftText(s)))),
+              ),
             ],
       ),
     ),
   );
 }
 
+// ---- resources --------------------------------------------------------------------------
 function renderResources(): void {
   const off = new Set(state.off);
   const vis = raws.filter(inBiome);
   const groups: HTMLElement[] = [];
   for (let r = biomeRank(state.biome as Biome); r >= 0; r--) {
     const biome = BIOMES[r] as Biome;
-    const rows = vis.filter((x) => x.biome === biome).sort((a, b) => a.name.localeCompare(b.name));
-    if (rows.length === 0) continue;
+    const list = vis.filter((x) => x.biome === biome).sort((a, b) => a.name.localeCompare(b.name));
+    if (list.length === 0) continue;
+    const on = list.filter((x) => !off.has(x.name)).length;
     groups.push(
-      h('h3', {}, biome),
       h(
         'div',
-        { class: 'res' },
-        ...rows.map((x) =>
+        { class: 'resgroup' },
+        h('div', { class: 'gh' }, ic(biomeIcon(biome), 'ic-17'), h('h3', {}, biome), h('span', { class: 'cnt' }, `${on} / ${list.length}`)),
+        ...list.map((x) =>
           h(
             'label',
             { class: off.has(x.name) ? 'off' : '' },
@@ -528,11 +738,11 @@ function renderResources(): void {
               type: 'checkbox',
               checked: !off.has(x.name),
               onchange: (e: Event) => {
-                const on = (e.target as HTMLInputElement).checked;
-                update({ off: on ? state.off.filter((o) => o !== x.name) : [...state.off, x.name] });
+                const isOn = (e.target as HTMLInputElement).checked;
+                update({ off: isOn ? state.off.filter((o) => o !== x.name) : [...state.off, x.name] });
               },
             }),
-            h('span', {}, x.name, h('span', { class: 'src' }, x.source ?? '')),
+            h('span', {}, h('span', { class: 'nm' }, x.name), h('span', { class: 'src' }, x.source ?? '')),
           ),
         ),
       ),
@@ -543,17 +753,35 @@ function renderResources(): void {
     h(
       'div',
       { class: 'head' },
-      h('h2', {}, 'Resources you can be bothered to fetch'),
-      h('div', { class: 'controls' }, h('button', { onclick: () => update({ off: [] }) }, 'Tick all'), h('button', { onclick: () => update({ off: raws.map((x) => x.name) }) }, 'Untick all')),
+      h('h2', {}, 'Resources'),
+      h('span', { class: 'controls right' }, h('button', { class: 'small', onclick: () => update({ off: [] }) }, 'Tick all'), h('button', { class: 'small', onclick: () => update({ off: raws.map((x) => x.name) }) }, 'Untick all')),
     ),
-    h('p', { class: 'muted', style: 'margin:0' }, 'Untick what you refuse to farm. Every dish and mead that needs it, anywhere in its recipe, disappears from the whole page.'),
-    ...groups,
+    h('p', { class: 'lede' }, 'Untick what you cannot farm. Every dish and mead that needs it, anywhere in its recipe, disappears from the whole page.'),
+    h('div', { class: 'resgrid' }, ...groups),
   );
 }
 
+// ---- gather badge in the sticky nav -------------------------------------------------------
+let lastCount = -1;
+function renderBadge(): void {
+  const badge = document.getElementById('gather-badge') as HTMLElement;
+  const n = Object.values(state.picks).filter((v) => v > 0).length;
+  badge.hidden = n === 0 || state.biome === null;
+  badge.textContent = String(n);
+  if (lastCount >= 0 && n > lastCount) {
+    badge.classList.remove('pulse');
+    void badge.offsetWidth; // restart the animation
+    badge.classList.add('pulse');
+  }
+  lastCount = n;
+}
+
+// ---- render -------------------------------------------------------------------------------
 function render(): void {
+  closePopover();
   renderBiome();
   renderPicker();
+  renderBadge();
   if (state.biome === null) return;
   renderBest();
   renderOverview();

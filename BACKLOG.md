@@ -8,6 +8,13 @@
 - Gather list with craft-step steppers for dishes and meads, raw totals by biome, crafting order.
 - Resource checklist with sources.
 - Data checks in `test.mjs`, run in the deploy workflow.
+- Full visual redesign from the Claude Design handoff: tokens, original icon set, rune-cut V
+  mark and favicon, hero band on first visit, 1280 content width, two-column build cards.
+- First-visit picker: select a tile, then Continue. Spoiler-free subtitle per biome.
+- Header chip "Spoilers: <biome> and earlier".
+- Live gather count badge in the sticky nav, pulses on add.
+- Info and unverified marks are click/keyboard popovers (Esc closes), not hover-only titles.
+- Overview rows expand on phone to hold Bars, Time, Station and add.
 
 ## Open
 
@@ -15,3 +22,6 @@
 - [ ] `[P2]` Verify in game: Kale Chips recipe (wiki gives 12 Kale at the Stone oven, Raw Kale Chips step unclear), Oat flour ratio, Pulled Bear hp/tick.
 - [ ] `[P2]` Search field above the gather list. At Deep North it holds over 100 rows.
 - [ ] `[P3]` Recheck the weirdgloop Food table after the next patch; Deep North pages are marked work in progress there.
+- [ ] `[P3]` PNG icon exports (favicon-32/16, apple-touch-icon-180, icon-192/512). The mark ships
+      as an inline SVG data URI today; PNGs need a rasteriser in the build and extra `cp` lines
+      in the deploy workflow.
