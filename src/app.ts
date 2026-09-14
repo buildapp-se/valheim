@@ -454,8 +454,10 @@ function stepper(it: Item): HTMLElement {
 }
 function pickRow(it: Item): HTMLElement {
   const y = it.recipe?.yield ?? 1;
-  const sub = it.mead ? `${it.mead.effect}. ${it.recipe?.station}` : it.recipe ? `${it.recipe.station}${y > 1 ? `, ${y} per craft` : ''}: ${ingredients(it)}` : it.source ?? '';
-  return h('div', { class: `row${(state.picks[it.name] ?? 0) > 0 ? ' picked' : ''}` }, h('span', {}, it.name, unverifiedMark(it), infoMark(it), h('span', { class: 'sub' }, sub)), stepper(it));
+  // meads: effect on the name line, station and ingredients on the second line, same as foods
+  const sub = it.recipe ? `${it.recipe.station}${y > 1 && !it.mead ? `, ${y} per craft` : ''}: ${ingredients(it)}` : it.source ?? '';
+  const effect = it.mead ? h('span', { class: 'effect' }, it.mead.effect) : null;
+  return h('div', { class: `row${(state.picks[it.name] ?? 0) > 0 ? ' picked' : ''}` }, h('span', {}, it.name, unverifiedMark(it), infoMark(it), effect, h('span', { class: 'sub' }, sub)), stepper(it));
 }
 
 function craftText(s: CraftStep): string {

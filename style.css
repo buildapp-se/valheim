@@ -165,6 +165,7 @@ td.ing { color: var(--muted); font-size: 0.85rem; }
 .list .row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0.5rem; padding: 0.2rem 0.3rem; border-radius: 6px; }
 .list .row:hover { background: var(--panel-2); }
 .list .row .sub { color: var(--muted); font-size: 0.78rem; display: block; }
+.list .row .effect { margin-left: 0.45rem; color: #b9a878; font-size: 0.78rem; font-style: italic; }
 .list .row.picked { background: #26221a; }
 .result ul { list-style: none; padding: 0; margin: 0 0 0.6rem; }
 .result li { display: flex; justify-content: space-between; gap: 0.6rem; padding: 0.2rem 0.3rem; border-bottom: 1px solid #202229; }
