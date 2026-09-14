@@ -25,12 +25,43 @@ Three foods, summed. Decided in the grill 2026-09-14.
 
 Ties break on summed hp/tick, then on the shortest duration.
 
+## Look
+
+Redesigned 2026-09-14 from a Claude Design handoff: **carved dark wood, cold iron, one ember**.
+Flat plank surfaces with a hairline top light and a 2px radius; firelight only on the active
+section, the chosen biome and the primary action. Dark theme only.
+
+- Tokens live at the top of `style.css` as custom properties. Surfaces `--bg/--plank/--plank-2`,
+  ink `--ink/--ink-2/--ink-3`, accent `--ember/--ember-hi`. Old names (`--gold`, `--text`,
+  `--panel`) are kept as aliases so `privacy.html` keeps resolving.
+- Type: Grenze (display), IBM Plex Sans (UI), IBM Plex Mono (every number, so columns align).
+  One Google Fonts request, three families.
+- Stat colours keep their meaning, shades lifted for AA on the new ground:
+  health `#ef6b5e`, stamina `#e8c24a`, eitr `#6ea8ff`, regen `#63c48b`.
+- Content max width is 1280 (was 1600): six build cards over 1600 made comparing combos a
+  head-turn. Build cards are two columns, never three, because that is what the longest
+  three-food pill line needs.
+- Icons are one original set on a 24px grid, 1.75px stroke, `currentColor`, shipped as a hidden
+  `<symbol>` sprite at the top of `index.html` and used via `<svg class="ic"><use href="#id">`.
+  Names are kebab-case: `icon-*` stats, `biome-*`, `station-*`, `ui-*`, plus `app-icon` (the
+  rune-cut V, also the favicon as an inline data URI).
+- Four sections stay **one scrolling page**, not tabs: choosing a combo, checking the numbers and
+  gathering is one workflow, and tabs would hide the gather list exactly while it is being filled.
+  The nav is sticky with scroll-spy and carries a live gather count.
+
 ## Architecture
 
 - Vanilla TypeScript, `strict`, compiled by `tsc` to `dist/`. No framework, no bundler, no backend.
 - `src/model.ts`: types, recipe expansion (`gather`), scoring (`BUILDS`, `bestCombos`). No DOM, so `test.mjs` runs it in node.
+- `src/ui.ts`: presentation helpers only — icon refs, the station/biome icon maps, the `h()` DOM
+  builder and the single popover used by the info and warning marks.
 - `src/data.ts`: every item. One `Item` is a raw resource (`source`), a crafted intermediate (`recipe`), a food (`food`, optionally with `recipe`) or a mead (`mead` + `recipe`). Material names must match an item name exactly.
 - `src/app.ts`: all rendering. State in `localStorage` key `valheim-food-planner:v1`.
+  Two pieces of view-only state are deliberately **not** persisted: the first-visit tile
+  selection (you pick a tile, then confirm with Continue) and which overview rows are
+  expanded on phone.
+- Station strings are compound (`Cauldron (7) + Stone oven`, `Mead ketill + Fermenter`), so
+  `stationIcon()` matches the **primary** station at the start of the string.
 - Deploy: GitHub Actions builds, runs `npm test`, publishes `index.html`, `style.css` and `dist/*.js` to Pages. A failing check blocks the deploy.
 
 ## Data
@@ -39,4 +70,4 @@ Source: the Food and Mead tables on `valheim.weirdgloop.org` (CC BY-NC-SA), read
 
 `biome` means the progression tier the wiki table gives, not where the item grows. Egg is Plains because Haldor sells it after Yagluth.
 
-Items flagged `unverified` show a warning mark with the reason on hover. Current flags: Oatmeal stats, Pulled Bear healing, the Kale Chips recipe, and the Oat flour windmill ratio.
+Items flagged `unverified` show a warning mark opening a popover with the reason. Current flags: Oatmeal stats, Pulled Bear healing, the Kale Chips recipe, and the Oat flour windmill ratio.
