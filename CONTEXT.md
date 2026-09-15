@@ -1,6 +1,6 @@
 # Valheim Food Planner
 
-Static web app at `buildapp.se/valheim/` for picking Valheim food. Unlisted on the buildapp.se front page. English only. Desktop first, works at phone width.
+Static web app at `buildapp.se/valheim/` for picking Valheim food. Listed last on the buildapp.se front page (since 2026-09-15). English only. Desktop first, works at phone width.
 
 ## What it does
 
