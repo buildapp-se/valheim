@@ -11,6 +11,10 @@ reviewedAt: 2026-09-16
 
 First version built and deployed 2026-09-14. Scope came from a grill session the same day; the decisions are recorded in `CONTEXT.md`.
 
+## 2026-09-16: policy 1.1
+
+privacy.html said Google Fonts served only the title typeface; index.html loads three families (Grenze, IBM Plex Sans, IBM Plex Mono). Fixed, version 1.1, commit `1a43445`, verified live. Found by an external privacy review of a sister site.
+
 ## Verify
 
 ```
