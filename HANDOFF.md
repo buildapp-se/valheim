@@ -4,7 +4,7 @@ status: active
 currentGoal: Valheim Food Planner live at buildapp.se/valheim with verified data through Deep North
 nextAction: Patrik checks Oatmeal stats in game and tries the site
 blockers: []
-reviewedAt: 2026-09-14
+reviewedAt: 2026-09-16
 ---
 
 # Handoff
@@ -31,3 +31,7 @@ Local run: `python -m http.server 8787` in the repo root, then open http://127.0
 - Steppers set `width` as well as flex-basis: Firefox and Safari ignore flex-basis when sizing the box, so after the redesign their +1/+5 and card + spilled outside (fixed 2026-09-14). Check layout changes in Firefox or WebKit too, not only Chrome.
 - Overview food rows use the same `− N +` as combos (N = portions). Food pills in combos are buttons that open station and ingredients in the popover.
 - Per biome is disabled while Combos is on, by design: a trio spans biomes.
+
+## Granskning 2026-09-16
+
+Cross-project audit run from elwyn-dash (session 5 in the daily note). Results written to `## Audits` in CONTEXT.md, findings appended to BACKLOG.md under `## Granskning 2026-09-16`. Headers on buildapp.se and the TLS grade are zone-level and are fixed once in Cloudflare, not here.
