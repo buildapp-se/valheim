@@ -9,6 +9,13 @@ reviewedAt: 2026-09-16
 
 # Handoff
 
+## 2026-09-16: granskningsbatchen
+
+W3C-felen (kodade mellanslag i ikonernas data-URI, h2 i stället för h4 i
+sekretessrutan) och flikarnas 43 px rättade i `c7e4d8d`, CI-deployade, mätta
+live: W3C 0 fel, 0 tryckytor under 44 px. Kvar från granskningen: CLS 0,49 på
+mobil (P3), inte undersökt.
+
 First version built and deployed 2026-09-14. Scope came from a grill session the same day; the decisions are recorded in `CONTEXT.md`.
 
 ## 2026-09-16: policy 1.1

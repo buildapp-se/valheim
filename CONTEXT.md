@@ -77,6 +77,6 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - Headers: 2026-09-16, pass, 6 of 6 on buildapp.se via a host-scoped Transform Rule on the zone, measured after the change
 - TLS: 2026-09-16, pass, SSL Labs A+ on buildapp.se, TLS 1.2 minimum and HSTS since today
 - Lighthouse: 2026-09-16, pass, a11y 100, best practices 100, SEO 100, CLS 0,49 flagged (mobile, no perf)
-- Markup: 2026-09-16, fail, W3C 3 errors: two data: SVG icon hrefs with raw spaces, h4 directly after h1; 0 broken links
-- UX: 2026-09-16, warn, 5 of 6 script checks pass, nav links 43 px
+- Markup: 2026-09-16, pass, W3C 0 errors, 5 warnings after the fix (icon hrefs encoded, privacy headings h2); 0 broken links
+- UX: 2026-09-16, pass, 0 targets under 44 px after the fix (tabs and skip link 44 px), 5 of 6 script checks pass, no --interact
 - npm audit: 2026-09-16, pass, 0
