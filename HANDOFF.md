@@ -4,8 +4,10 @@ status: active
 currentGoal: Valheim Food Planner live at buildapp.se/valheim with verified data through Deep North
 nextAction: Patrik checks Oatmeal stats in game and tries the site
 blockers: []
-reviewedAt: 2026-09-16
+reviewedAt: 2026-09-24
 ---
+
+**2026-09-24, audits från aifabriken (`tools/audit-run.mjs`).** Actions: `persist-credentials: false` på checkout i deploy.yml. Nya auditrader Secrets och Actions, båda pass.
 
 # Handoff
 
