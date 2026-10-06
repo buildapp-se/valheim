@@ -44,7 +44,10 @@ section, the chosen biome and the primary action. Dark theme only.
 - Icons are one original set on a 24px grid, 1.75px stroke, `currentColor`, shipped as a hidden
   `<symbol>` sprite at the top of `index.html` and used via `<svg class="ic"><use href="#id">`.
   Names are kebab-case: `icon-*` stats, `biome-*`, `station-*`, `ui-*`, plus `app-icon` (the
-  rune-cut V, also the favicon as an inline data URI).
+  rune-cut V, also the favicon as an inline data URI). PNG copies of the mark live in `icons/`
+  (favicon 16 and 32, apple-touch-icon 180, icon 192 and 512), screenshotted once in headless
+  Chrome from the two SVG marks: redo them by hand if the mark changes. The head links the PNGs
+  first and the SVG last, so browsers that take SVG favicons still get the sharp one.
 - Four sections stay **one scrolling page**, not tabs: choosing a combo, checking the numbers and
   gathering is one workflow, and tabs would hide the gather list exactly while it is being filled.
   The nav is sticky with scroll-spy and carries a live gather count.
@@ -62,7 +65,7 @@ section, the chosen biome and the primary action. Dark theme only.
   expanded on phone, and the gather search text.
 - Station strings are compound (`Cauldron (7) + Stone oven`, `Mead ketill + Fermenter`), so
   `stationIcon()` matches the **primary** station at the start of the string.
-- Deploy: GitHub Actions builds, runs `npm test`, publishes `index.html`, `style.css` and `dist/*.js` to Pages. A failing check blocks the deploy.
+- Deploy: GitHub Actions builds, runs `npm test`, publishes `index.html`, `privacy.html`, `style.css`, `dist/*.js` and `icons/*.png` to Pages. A failing check blocks the deploy.
 
 ## Data
 

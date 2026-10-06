@@ -22,9 +22,10 @@
 - [ ] `[P2]` Verify in game: Kale Chips recipe (wiki gives 12 Kale at the Stone oven, Raw Kale Chips step unclear), Oat flour ratio, Pulled Bear hp/tick.
 - [x] `[P2]` (built 2026-10-06) Search field above the gather list. At Deep North it holds over 100 rows. Matches name, station, ingredients and mead effect.
 - [ ] `[P3]` Recheck the weirdgloop Food table after the next patch; Deep North pages are marked work in progress there.
-- [ ] `[P3]` PNG icon exports (favicon-32/16, apple-touch-icon-180, icon-192/512). The mark ships
-      as an inline SVG data URI today; PNGs need a rasteriser in the build and extra `cp` lines
-      in the deploy workflow.
+- [x] `[P3]` (built 2026-10-06) PNG icon exports (favicon-32/16, apple-touch-icon-180, icon-192/512). Committed
+      under `icons/`, rasterised once from the two inline SVG marks, so the build needs no rasteriser.
+      The deploy workflow copies `icons/*.png`. icon-192/512 ship but nothing links them: that takes a
+      web manifest, which is a separate decision.
 
 ## Granskning 2026-09-16
 

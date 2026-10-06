@@ -33,9 +33,10 @@ jobs:
       - run: npm test
       - name: Assemble site
         run: |
-          mkdir -p out/dist
+          mkdir -p out/dist out/icons
           cp index.html privacy.html style.css .nojekyll out/
           cp dist/*.js out/dist/
+          cp icons/*.png out/icons/
       # Pages sends max-age=14400 and Cloudflare caches it, so without a version tag a new
       # index.html can load four-hour-old scripts. The commit sha gives every deploy new URLs.
       - name: Version-tag scripts and stylesheet
