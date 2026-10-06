@@ -18,10 +18,10 @@
 
 ## Open
 
-- [ ] `[P1]` Verify in game: Oatmeal stats (wiki says 39/115/85, total 239, far above every other food). If wrong, fix `src/data.ts` and drop the flag.
-- [ ] `[P2]` Verify in game: Kale Chips recipe (wiki gives 12 Kale at the Stone oven, Raw Kale Chips step unclear), Oat flour ratio, Pulled Bear hp/tick.
+- [ ] `[P1]` Verify in game: Oatmeal stats (wiki says 39/115/85, total 239, far above every other food). If wrong, fix `src/data.ts` and drop the flag. 2026-10-06: the wiki's Oatmeal page is no longer work in progress and gives the same numbers from datamined values (revision 2026-09-28). Decide whether that is enough to drop the flag.
+- [ ] `[P2]` Verify in game: Kale Chips recipe (wiki gives 12 Kale at the Stone oven, Raw Kale Chips step unclear), Oat flour ratio, Pulled Bear hp/tick. 2026-10-06: the wiki now gives all three from datamined values: 12 Kale make 4 Raw Kale Chips at a level 6 Cauldron (data updated), 1 Oats to 1 Oat Flour, Pulled Bear 3 hp/tick. Same decision as Oatmeal.
 - [x] `[P2]` (built 2026-10-06) Search field above the gather list. At Deep North it holds over 100 rows. Matches name, station, ingredients and mead effect.
-- [ ] `[P3]` Recheck the weirdgloop Food table after the next patch; Deep North pages are marked work in progress there.
+- [x] `[P3]` (rechecked 2026-10-06, Food and Mead tables, all 95 foods and 20 meads diffed by script) Recheck the weirdgloop Food table after the next patch; Deep North pages are marked work in progress there. Changed: Oven Pancake, Kale Chips, Berserkir mead batch size, seven mead cooldowns. Details in CONTEXT.md under Data.
 - [x] `[P3]` (built 2026-10-06) PNG icon exports (favicon-32/16, apple-touch-icon-180, icon-192/512). Committed
       under `icons/`, rasterised once from the two inline SVG marks, so the build needs no rasteriser.
       The deploy workflow copies `icons/*.png`. icon-192/512 ship but nothing links them: that takes a

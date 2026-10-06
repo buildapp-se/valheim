@@ -82,6 +82,14 @@ check('gather counts feasts and meads', () => {
   assert.equal(g.raw.get('Moose meat'), 3);
   assert.equal(g.raw.get('Honey'), 10);
 });
+check('wiki recheck 2026-10-06: Oven Pancake is an eitr food, Kale Chips and Berserkir mead batch sizes', () => {
+  assert.deepEqual(getItem('Oven Pancake').food, { health: 37, stamina: 18, eitr: 105, healing: 5, duration: 1800 });
+  assert.equal(gather({ 'Oven Pancake': 1 }).raw.get('Poteitr'), 2);
+  assert.equal(gather({ 'Kale Chips': 4 }).raw.get('Kale'), 12);
+  assert.equal(snap(getItem('Kale Chips'), 1), 4);
+  assert.equal(gather({ 'Berserkir mead': 3 }).raw.get('Toadstool'), 1);
+  assert.equal(gather({ 'Berserkir mead': 4 }).raw.get('Toadstool'), 2);
+});
 check('max health at Ashlands is Piquant pie + Mashed meat + Fiery svinstew = 300 (wiki)', () => {
   const foods = ITEMS.filter((i) => i.food && !i.food.feast && biomeRank(i.biome) <= biomeRank('Ashlands'));
   const [best] = bestCombos(foods, BUILDS.find((b) => b.id === 'health'));
