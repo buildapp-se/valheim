@@ -38,4 +38,5 @@ Fynd från cockpitens granskningskolumner (Lighthouse mobil, W3C, UX-skript, hea
 
 Fynd från den automatiska sviten (aifabriken `tools/audit-suite.ts`: headers, npm audit, secrets, Actions, markup, axe). Mätvärdena står som `(automated)`-rader under `## Audits` i CONTEXT.md.
 
-- [ ] `[P3]` WCAG: axe hittar 0 fel men kan inte avgöra kontrasten på 3 element. Manuell kontrastkontroll återstår.
+- [x] `[P3]` (kontrollerad 2026-10-06, ingen kodändring) WCAG: axe hittar 0 fel men kan inte avgöra kontrasten på 3 element. Manuell kontrastkontroll återstår. De tre är hjältebandets texter ovanpå bergskammen (`.eyebrow span`, `h2`, `p`). Mätt mot den ljusaste bakgrundspixeln bakom varje text, sex bredder 360 till 1920 px: lägst 5,35:1 (krav 4,5), rubriken 10,43:1 (krav 3), brödtexten 7,08:1. Alla klarar AA.
+- [ ] `[P3]` WCAG: avbockad resurs i Resources (`.resgrid label.off`, `opacity: 0.45` i `style.css`) ger 3,78:1 på namnet och 1,98:1 på källraden, under 4,5. Raden är fortfarande klickbar, så undantaget för inaktiva kontroller gäller inte. Hittad med axe lokalt 2026-10-06 med en resurs avbockad, ett läge sviten inte besöker. Kräver ett smakbeslut om hur avbockat ska se ut.
