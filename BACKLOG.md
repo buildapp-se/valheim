@@ -20,7 +20,7 @@
 
 - [ ] `[P1]` Verify in game: Oatmeal stats (wiki says 39/115/85, total 239, far above every other food). If wrong, fix `src/data.ts` and drop the flag.
 - [ ] `[P2]` Verify in game: Kale Chips recipe (wiki gives 12 Kale at the Stone oven, Raw Kale Chips step unclear), Oat flour ratio, Pulled Bear hp/tick.
-- [ ] `[P2]` Search field above the gather list. At Deep North it holds over 100 rows.
+- [x] `[P2]` (built 2026-10-06) Search field above the gather list. At Deep North it holds over 100 rows. Matches name, station, ingredients and mead effect.
 - [ ] `[P3]` Recheck the weirdgloop Food table after the next patch; Deep North pages are marked work in progress there.
 - [ ] `[P3]` PNG icon exports (favicon-32/16, apple-touch-icon-180, icon-192/512). The mark ships
       as an inline SVG data URI today; PNGs need a rasteriser in the build and extra `cp` lines

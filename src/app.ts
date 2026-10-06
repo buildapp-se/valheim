@@ -79,6 +79,7 @@ function update(patch: Partial<State>): void {
 
 /** view-only state: never persisted, never part of a URL */
 let pickerChoice: Biome | null = null;
+let gatherQuery = '';
 const expanded = new Set<string>();
 
 // ---- derived --------------------------------------------------------------------
@@ -651,7 +652,7 @@ function pickRow(it: Item): HTMLElement {
   const sIcon = stationIcon(it.recipe?.station);
   return h(
     'div',
-    { class: `row${(state.picks[it.name] ?? 0) > 0 ? ' picked' : ''}` },
+    { class: `row${(state.picks[it.name] ?? 0) > 0 ? ' picked' : ''}`, 'data-search': `${it.name} ${stationLine(it)} ${it.mead?.effect ?? ''}`.toLowerCase() },
     h(
       'div',
       { class: 'meta' },
@@ -669,6 +670,17 @@ function pickRow(it: Item): HTMLElement {
     ),
     stepper(it),
   );
+}
+
+/** hide the dish and mead rows that don't match the search; toggles rows in place so typing keeps focus */
+function filterGather(): void {
+  const q = gatherQuery.trim().toLowerCase();
+  let shown = 0;
+  for (const row of document.querySelectorAll<HTMLElement>('#gather .list .row')) {
+    row.hidden = !(row.dataset.search ?? '').includes(q);
+    if (!row.hidden) shown++;
+  }
+  (document.getElementById('gather-none') as HTMLElement).hidden = shown > 0;
 }
 
 function craftText(s: CraftStep): string {
@@ -707,6 +719,18 @@ function renderGather(): void {
       h(
         'div',
         { class: 'list-col' },
+        h('input', {
+          type: 'search',
+          class: 'search',
+          placeholder: 'Search dishes, meads or ingredients',
+          'aria-label': 'Search dishes, meads or ingredients',
+          value: gatherQuery,
+          oninput: (e: Event) => {
+            gatherQuery = (e.target as HTMLInputElement).value;
+            filterGather();
+          },
+        }),
+        h('div', { class: 'empty', id: 'gather-none', hidden: true }, 'No dish or mead matches.'),
         h('div', { class: 'colhead' }, 'Dishes'),
         h('div', { class: 'list' }, ...visFoods.map(pickRow)),
         h('div', { class: 'colhead', style: 'margin-top:20px' }, 'Meads'),
@@ -746,6 +770,7 @@ function renderGather(): void {
       ),
     ),
   );
+  filterGather();
 }
 
 // ---- resources --------------------------------------------------------------------------
