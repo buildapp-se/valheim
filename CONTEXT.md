@@ -71,9 +71,11 @@ section, the chosen biome and the primary action. Dark theme only.
 
 Source: the Food and Mead tables on `valheim.weirdgloop.org` (CC BY-NC-SA), read 2026-09-14, Valheim 1.0.12. That wiki is the only one with Deep North rows; Fandom stops at Ashlands, wiki.gg blocks scripted reads. Resource sources come from each item's wiki page. Credit is in the footer.
 
+Rechecked 2026-10-06 against both tables as revised on the wiki 2026-10-05 (Food) and 2026-09-27 (Mead), after the wiki filled the Deep North pages from datamined game values. Three rows changed: Oven Pancake is an eitr food (37/18/105, 30 min, 2 Poteitr), Kale Chips are 12 Kale for 4 at a level 6 Cauldron then the Stone oven, Berserkir mead makes 3 per batch. Seven mead cooldowns corrected (stored, not shown). Love Potion is on the wiki's mead table but is bought for coins, so it stays out.
+
 `biome` means the progression tier the wiki table gives, not where the item grows. Egg is Plains because Haldor sells it after Yagluth.
 
-Items flagged `unverified` show a warning mark opening a popover with the reason. Current flags: Oatmeal stats, Pulled Bear healing, the Kale Chips recipe, and the Oat flour windmill ratio.
+Items flagged `unverified` show a warning mark opening a popover with the reason. Current flags: Oatmeal stats, Pulled Bear healing, the Kale Chips recipe, and the Oat flour windmill ratio. All four now match datamined wiki pages (read 2026-10-06); the flags stay until someone has seen the values in game.
 
 ## Audits
 Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; conventions in elwyn-dash `docs/security.md`.
