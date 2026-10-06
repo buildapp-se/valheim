@@ -83,3 +83,9 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - Secrets: 2026-09-24, pass, gitleaks 0 findings in 19 commits
 - Actions: 2026-09-24, pass, zizmor 0 high, 0 medium, 0 low
 - WCAG 2.2 AA: 2026-09-24, warn, axe 4.13.0 0 violations on buildapp.se/valheim (mobile, one page); manual keyboard pass not done
+- Headers (automated): 2026-10-06, fail, 1 targets; 1 failed, 0 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a/valheim.json
+- npm audit (automated): 2026-10-06, pass, 1 targets; 0 failed, 0 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a/valheim.json
+- Secrets (automated): 2026-10-06, pass, 2 targets; 0 failed, 0 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a/valheim.json
+- Actions (automated): 2026-10-06, pass, zizmor 0 high, 0 medium, 0 low; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a/valheim.json
+- Markup (automated): 2026-10-06, blocked, 1 targets; 0 failed, 1 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a2/valheim.json
+- WCAG 2.2 AA (automated): 2026-10-06, blocked, 1 targets; 0 failed, 1 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a2/valheim.json
