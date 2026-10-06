@@ -31,7 +31,7 @@
 Fynd från cockpitens granskningskolumner (Lighthouse mobil, W3C, UX-skript, headers, TLS, OWASP). Mätvärdena står under `## Audits` i CONTEXT.md.
 
 - [x] `[P2]` (rättad 2026-09-16, `c7e4d8d`, W3C 0 fel live) W3C: `<link rel=icon>` och `apple-touch-icon` har `data:image/svg+xml` med råa mellanslag i href, kodas som `%20`. Och `<h4>Cookie` följer direkt på h1, hoppar två nivåer.
-- [ ] `[P3]` Lighthouse: CLS 0,49 vid laddning på mobil, något flyttar sig efter första målningen.
+- [x] `[P3]` (rättad 2026-10-06, mätt lokalt, inte live) Lighthouse: CLS 0,49 vid laddning på mobil, något flyttar sig efter första målningen. Orsak: tomt skal målades före `app.js`, sedan hoppade sidhuvud, main och sidfot. `blocking="render"` på skriptet plus `min-height` på main: första besök 0,24 till 0,00, återbesök 0,87 till 0,09 (strypt mobil, Chrome). Kvar: 0,08 till 0,09 från typsnittsbytet på återbesök, och webbläsare utan `blocking=render` hamnar på cirka 0,2.
 - [x] `[P3]` (rättad 2026-09-16, `c7e4d8d`, 0 ytor under 44 px live) UX, Fitts: navlänkarna är 43 px, en pixel under konventionen.
 
 ## Granskning 2026-10-06

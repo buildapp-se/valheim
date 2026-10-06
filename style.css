@@ -204,7 +204,9 @@ input[type='checkbox']:hover { border-color: var(--ember); }
   .tabs::-webkit-scrollbar { display: none; }
 }
 
-main { max-width: var(--content-max); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-12); }
+/* min-height keeps the footer below the fold while the sections are still empty, so it cannot
+   jump when they fill (browsers without blocking=render paint the empty shell first) */
+main { max-width: var(--content-max); margin: 0 auto; min-height: 100vh; align-content: start; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-12); }
 .panel { padding: 0; min-width: 0; }
 .panel[hidden], .picker[hidden] { display: none; }
 
