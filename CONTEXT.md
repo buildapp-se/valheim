@@ -8,7 +8,7 @@ Static web app at `buildapp.se/valheim/` for picking Valheim food. Listed last o
 - **Best food.** Top 5 three-food combos per build, from dishes whose whole ingredient tree is ticked in Resources. Feasts behind a toggle, default off.
 - **Overview.** Every food with a stacked bar (red health, yellow stamina, blue eitr) and a thin green hp/tick bar. Column headers sort: first click biggest first (Food A to Z), second click flips. Station sorts by the level number in the station name, none counts as 0. "Per biome" (default on) sorts inside biome groups, highest biome first; off gives one flat list with a biome tag. "Combos" switches to the top 30 three-food sums for the clicked column; Food and Station order the top 30 by total.
 - **Best-food cards** show health, stamina, eitr, total, hp/tick and duration per combo.
-- **Gather list.** Dishes and meads counted in portions, one per thing you eat. Steppers move in whole crafts: a dish that makes 3 per craft steps by 3, a feast by 10 (one placed feast serves 10, wiki Feast page). The big buttons are five crafts, the in-game shift-click. Dishes that do not step by 1 carry an i tooltip explaining why. Meads show their effect in small text on the name line and "Mead ketill + Fermenter: ingredients" on the second line. Output: raw resources grouped by biome with source, plus crafting order, feasts shown as feasts = portions.
+- **Gather list.** Dishes and meads counted in portions, one per thing you eat. Steppers move in whole crafts: a dish that makes 3 per craft steps by 3, a feast by 10 (one placed feast serves 10, wiki Feast page). The big buttons are five crafts, the in-game shift-click. Dishes that do not step by 1 carry an i tooltip explaining why. Meads show their effect in small text on the name line and "Mead ketill + Fermenter: ingredients" on the second line. A search field above the list filters dishes and meads on name, station, ingredients and mead effect. Output: raw resources grouped by biome with source, plus crafting order, feasts shown as feasts = portions.
 - **Resources.** Checklist of raw resources up to your biome, all ticked by default, each with a one-line source. An unticked resource hides every dish and mead that needs it, anywhere in its recipe tree, from every section.
 - **Combo stepper.** Each combo shows `− N +`: plus adds one craft of each of its three foods to the gather list, N is how many full rounds the list holds.
 
@@ -57,9 +57,9 @@ section, the chosen biome and the primary action. Dark theme only.
   builder and the single popover used by the info and warning marks.
 - `src/data.ts`: every item. One `Item` is a raw resource (`source`), a crafted intermediate (`recipe`), a food (`food`, optionally with `recipe`) or a mead (`mead` + `recipe`). Material names must match an item name exactly.
 - `src/app.ts`: all rendering. State in `localStorage` key `valheim-food-planner:v1`.
-  Two pieces of view-only state are deliberately **not** persisted: the first-visit tile
-  selection (you pick a tile, then confirm with Continue) and which overview rows are
-  expanded on phone.
+  Three pieces of view-only state are deliberately **not** persisted: the first-visit tile
+  selection (you pick a tile, then confirm with Continue), which overview rows are
+  expanded on phone, and the gather search text.
 - Station strings are compound (`Cauldron (7) + Stone oven`, `Mead ketill + Fermenter`), so
   `stationIcon()` matches the **primary** station at the start of the string.
 - Deploy: GitHub Actions builds, runs `npm test`, publishes `index.html`, `style.css` and `dist/*.js` to Pages. A failing check blocks the deploy.

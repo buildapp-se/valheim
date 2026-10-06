@@ -485,7 +485,14 @@ tr.panel .k { color: var(--ink-3); font-family: var(--font-num); font-size: 11px
 .build, .list .row .meta { min-width: 0; }
 @media (max-width: 900px) { .gather { grid-template-columns: minmax(0, 1fr); } }
 .colhead { font-family: var(--font-num); font-size: 11px; letter-spacing: 0.14em; color: var(--ink-3); text-transform: uppercase; }
+.search {
+  width: 100%; height: var(--tap-h); margin-bottom: var(--s-4); padding: 0 var(--s-3);
+  background: var(--plank); border: 1px solid var(--line-strong); border-radius: var(--r-1);
+}
+.search::placeholder { color: var(--ink-3); }
+.search:hover { border-color: var(--ember); }
 .list { display: flex; flex-direction: column; gap: var(--s-3); }
+.list .row[hidden] { display: none; }
 .list .row {
   background: var(--plank); border: 1px solid var(--line); border-top-color: var(--line-strong); border-radius: var(--r-1);
   padding: var(--s-3) var(--s-4); display: flex; align-items: center; gap: var(--s-4);
