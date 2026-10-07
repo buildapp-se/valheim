@@ -2,9 +2,9 @@
 schemaVersion: 1
 status: active
 currentGoal: Valheim Food Planner live at buildapp.se/valheim with verified data through Deep North
-nextAction: Patrik reviews and merges branch batch/2026-10-06 (merge deploys), then decides whether the datamined wiki pages are enough to drop the four unverified flags
+nextAction: Patrik decides whether the datamined wiki pages are enough to drop the four unverified flags
 blockers: []
-reviewedAt: 2026-10-06
+reviewedAt: 2026-10-07
 ---
 
 **2026-09-24, audits från aifabriken (`tools/audit-run.mjs`).** Actions: `persist-credentials: false` på checkout i deploy.yml. Nya auditrader Secrets och Actions, båda pass.
@@ -53,9 +53,9 @@ Cross-project audit run from elwyn-dash (session 5 in the daily note). Results w
 
 Cross-project run from elwyn-dash with aifabriken `tools/audit-suite.ts` (headers, npm audit, secrets, Actions, markup, axe at one mobile viewport; TLS and Lighthouse not run). Results are the `(automated)` lines under `## Audits` in CONTEXT.md, findings under `## Granskning 2026-10-06` in BACKLOG.md. Markup 0 findings (one external link outside the suite's scope), axe 0 violations with 3 contrast nodes for manual review, npm audit pass. Headers fail is the shared buildapp.se CSP without `script-src` (zone Transform Rule, owned by elwyn-dash `docs/security.md` §Open 11), not something this repository can fix. No application code or deployment changed. `reviewedAt` was left alone: the goal and next action above were not reviewed.
 
-## Overnight batch, 2026-10-06 (branch `batch/2026-10-06`, not merged, not deployed)
+## Overnight batch, 2026-10-06 (branch `batch/2026-10-06`, merged to main and deployed 2026-10-07)
 
-Five backlog items, one commit each. Nothing is live: the deploy workflow runs on push to main.
+Five backlog items, one commit each. Merged to main and deployed 2026-10-07 on Patrik's order (the deploy workflow runs on push to main).
 
 - `e9beffd` Search field above the gather list. Matches name, station, ingredients and mead effect. Rows are hidden in place, so typing keeps focus; the text is view-only state. Checked headless in Chrome (desktop, phone) and Firefox.
 - `e03cac0` CLS. The empty shell was painted before `app.js` drew the page, then header, main and footer jumped. The script now sits in the head with `blocking="render"` and `main` has `min-height: 100vh`. Local, throttled mobile Chrome: first visit 0,24 to 0,00, returning visit 0,87 to 0,09. What is left on a returning visit is the font swap (Grenze against Georgia rewraps the build titles). Browsers without `blocking=render` (Firefox, Safari) keep the header jump, about 0,2 in a Chrome run with the attribute removed. Not measured live, and not run through the W3C validator (html-validate: 0 findings).
@@ -65,4 +65,4 @@ Five backlog items, one commit each. Nothing is live: the deploy workflow runs o
 
 Still open: the two verify-in-game items (the wiki now backs all four flags with datamined values, the flags were kept) and the unticked-resource contrast, which needs a decision on how unticked should look.
 
-Check after merge: Lighthouse CLS on the live page, W3C on the new `blocking` attribute, and the touch icon on an iPhone home screen.
+Still to check now that it is live: Lighthouse CLS on the live page, W3C on the new `blocking` attribute, and the touch icon on an iPhone home screen.
