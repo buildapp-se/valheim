@@ -8,6 +8,6 @@
     "start": "npx -y serve -l 8787 ."
   },
   "devDependencies": {
-    "typescript": "^5.9.2"
+    "typescript": "^7.0.2"
   }
 }
