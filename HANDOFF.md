@@ -4,7 +4,7 @@ status: active
 currentGoal: Valheim Food Planner live at buildapp.se/valheim with verified data through Deep North
 nextAction: Patrik decides whether the datamined wiki pages are enough to drop the four unverified flags
 blockers: []
-reviewedAt: 2026-10-07
+reviewedAt: 2026-10-17
 ---
 
 **2026-09-24, audits från aifabriken (`tools/audit-run.mjs`).** Actions: `persist-credentials: false` på checkout i deploy.yml. Nya auditrader Secrets och Actions, båda pass.
@@ -66,3 +66,7 @@ Five backlog items, one commit each. Merged to main and deployed 2026-10-07 on P
 Still open: the two verify-in-game items (the wiki now backs all four flags with datamined values, the flags were kept) and the unticked-resource contrast, which needs a decision on how unticked should look.
 
 Still to check now that it is live: Lighthouse CLS on the live page, W3C on the new `blocking` attribute, and the touch icon on an iPhone home screen.
+
+## Beroendeuppdatering 2026-10-17
+
+- typescript 7.0.2 (Go-versionen), inga kodändringar. `npm test` (tsc plus `test.mjs`) grön före och efter, `npm audit` 0. Inte pushat: en push till `main` deployar.
