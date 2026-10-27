@@ -94,7 +94,7 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - Actions (automated): 2026-10-06, pass, zizmor 0 high, 0 medium, 0 low; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a/valheim.json
 - Markup (automated): 2026-10-06, blocked, 1 targets; 0 failed, 1 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a2/valheim.json
 - WCAG 2.2 AA (automated): 2026-10-06, blocked, 1 targets; 0 failed, 1 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a2/valheim.json
-- OG image: 2026-10-25, fail, no og:image tag on https://buildapp.se/valheim/
+- OG image: 2026-10-27, pass, 1200x630 PNG, https://buildapp.se/valheim/icons/og.png, screenshot of the top of the page, checked live and by eye
 - Database: 2026-10-25, none, localStorage
 - OWASP Top 10: 2026-10-26, pass, code review (Gemini 3.8 Flash, reviewed by Claude); 0 findings
 - ZAP baseline: 2026-10-27, n/a, static site on GitHub Pages with no server, cookies or forms; headers, TLS and markup are covered by their own columns, so a passive ZAP scan would repeat them
