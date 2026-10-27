@@ -97,3 +97,4 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - OG image: 2026-10-25, fail, no og:image tag on https://buildapp.se/valheim/
 - Database: 2026-10-25, none, localStorage
 - OWASP Top 10: 2026-10-26, pass, code review (Gemini 3.8 Flash, reviewed by Claude); 0 findings
+- ZAP baseline: 2026-10-27, n/a, static site on GitHub Pages with no server, cookies or forms; headers, TLS and markup are covered by their own columns, so a passive ZAP scan would repeat them
