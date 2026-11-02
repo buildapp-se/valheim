@@ -4,8 +4,9 @@ status: active
 currentGoal: Valheim Food Planner live at buildapp.se/valheim with verified data through Deep North
 nextAction: Patrik decides whether the datamined wiki pages are enough to drop the four unverified flags
 blockers: []
-reviewedAt: 2026-10-17
+reviewedAt: 2026-11-02
 ---
+**2026-11-02:** kontaktadressen är nu `kontakt@buildapp.se` (förut `kontakt@orgutveckling.se`). Integritetstexten version 1.2.
 
 **2026-09-24, audits från aifabriken (`tools/audit-run.mjs`).** Actions: `persist-credentials: false` på checkout i deploy.yml. Nya auditrader Secrets och Actions, båda pass.
 
