@@ -124,13 +124,25 @@ function combosFor(build: Build): Combo[] {
 // ---- shared pieces --------------------------------------------------------------
 function bars(s: { health: number; stamina: number; eitr: number; healing: number }, scale: number, regenScale: number): HTMLElement {
   const pct = (v: number): string => `${Math.min(100, (100 * v) / scale)}%`;
+  // aria-label is not allowed on a plain span, so each bar is one role="img" with the whole
+  // reading; the segments keep their titles as hover tooltips
   const seg = (cls: string, v: number, label: string): HTMLElement =>
-    h('span', { class: cls, style: `width:${pct(v)}`, title: `${label} ${v}`, 'aria-label': `${label} ${v}` });
+    h('span', { class: cls, style: `width:${pct(v)}`, title: `${label} ${v}` });
   return h(
     'div',
     { class: 'bars' },
-    h('div', { class: 'bar' }, seg('h', s.health, 'Health'), seg('s', s.stamina, 'Stamina'), seg('e', s.eitr, 'Eitr')),
-    h('div', { class: 'regen' }, h('span', { style: `width:${pct((s.healing * scale) / regenScale)}`, title: `${s.healing} hp/tick`, 'aria-label': `${s.healing} hp per tick` })),
+    h(
+      'div',
+      { class: 'bar', role: 'img', 'aria-label': `Health ${s.health}, stamina ${s.stamina}, eitr ${s.eitr}` },
+      seg('h', s.health, 'Health'),
+      seg('s', s.stamina, 'Stamina'),
+      seg('e', s.eitr, 'Eitr'),
+    ),
+    h(
+      'div',
+      { class: 'regen', role: 'img', 'aria-label': `${s.healing} hp per tick` },
+      h('span', { style: `width:${pct((s.healing * scale) / regenScale)}`, title: `${s.healing} hp/tick` }),
+    ),
   );
 }
 const legend = (): HTMLElement =>

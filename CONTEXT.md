@@ -48,6 +48,9 @@ section, the chosen biome and the primary action. Dark theme only.
   (favicon 16 and 32, apple-touch-icon 180, icon 192 and 512), screenshotted once in headless
   Chrome from the two SVG marks: redo them by hand if the mark changes. The head links the PNGs
   first and the SVG last, so browsers that take SVG favicons still get the sharp one.
+- The share preview `icons/og.png` (1200x630) is rendered from `og.source.html` in the repo root:
+  the hero's ridge, glow and type on the page ground. Not deployed. Rerender with headless Chromium at
+  1200x630 after the fonts have loaded, and keep `og:image:alt` in `index.html` in step with it.
 - Four sections stay **one scrolling page**, not tabs: choosing a combo, checking the numbers and
   gathering is one workflow, and tabs would hide the gather list exactly while it is being filled.
   The nav is sticky with scroll-spy and carries a live gather count.
@@ -94,7 +97,7 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - Actions (automated): 2026-10-06, pass, zizmor 0 high, 0 medium, 0 low; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a/valheim.json
 - Markup (automated): 2026-10-06, blocked, 1 targets; 0 failed, 1 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a2/valheim.json
 - WCAG 2.2 AA (automated): 2026-10-06, blocked, 1 targets; 0 failed, 1 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a2/valheim.json
-- OG image: 2026-10-27, pass, 1200x630 PNG, https://buildapp.se/valheim/icons/og.png, screenshot of the top of the page, checked live and by eye
+- OG image: 2026-11-04, pass, 1200x630 PNG, https://buildapp.se/valheim/icons/og.png; live tag and image answer 200 (the older page screenshot); the new card from og.source.html checked locally only, verdict reflects the local check until deployed
 - Database: 2026-10-25, none, localStorage
 - OWASP Top 10: 2026-10-30, warn, code review (Mistral Large, medium and high checked by Claude), no live probe; 0 high, 1 medium: no CSP in markup, zone CSP lacks script-src (shared zone rule)
 - ZAP baseline: 2026-10-27, n/a, static site on GitHub Pages with no server, cookies or forms; headers, TLS and markup are covered by their own columns, so a passive ZAP scan would repeat them

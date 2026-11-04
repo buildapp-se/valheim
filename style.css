@@ -92,7 +92,7 @@ h3 { font-size: 21px; color: var(--ink); }
   position: absolute; left: -9999px; top: 0; z-index: 60; min-height: 44px; display: inline-flex; align-items: center;
   background: var(--ember); color: var(--on-ember); padding: 10px 16px; font-weight: 600;
 }
-.skip:focus { left: var(--pad-page); }
+.skip:focus { left: var(--pad-page); position: absolute; }
 
 /* icons: size from CSS, colour from currentColor */
 .ic { width: 16px; height: 16px; flex: 0 0 auto; display: inline-block; vertical-align: -0.15em; }
@@ -316,6 +316,7 @@ main { max-width: var(--content-max); margin: 0 auto; min-height: 100vh; align-c
 .chip.feast { border-color: var(--ember-line); color: var(--ember); }
 /* food pills are buttons that open station + ingredients */
 button.chip { height: auto; font-size: 13px; padding: 5px 10px; justify-content: flex-start; text-align: left; }
+@media (max-width: 900px) { button.chip { min-height: var(--tap-h); } }
 button.chip:hover, button.chip[aria-expanded='true'] { background: var(--plank-hover); border-color: var(--ember); color: var(--ember-hi); }
 .tag-feast {
   display: inline-flex; align-items: center; gap: var(--s-1);
@@ -335,7 +336,7 @@ button.chip:hover, button.chip[aria-expanded='true'] { background: var(--plank-h
 .mark[aria-expanded='true'] { background: var(--plank-hover); color: var(--ember-hi); }
 /* inline marks inside dense cells stay compact but keep a 44px tap area on phone */
 td .mark, .chip + .mark, .rowname .mark { width: 28px; height: 28px; }
-@media (max-width: 900px) { td .mark, .rowname .mark { width: var(--tap-h); height: var(--tap-h); } }
+@media (max-width: 900px) { td .mark, .chip + .mark, .rowname .mark { width: var(--tap-h); height: var(--tap-h); } }
 
 .popover {
   position: absolute; z-index: 50; max-width: 280px;
@@ -388,6 +389,8 @@ td .mark, .chip + .mark, .rowname .mark { width: 28px; height: 28px; }
 .stepper.wide input::-webkit-outer-spin-button,
 .stepper.wide input::-webkit-inner-spin-button { appearance: none; margin: 0; }
 @media (max-width: 900px) {
+  /* the 1px border sits outside the buttons, so the box is 2px taller to give them the full 44 */
+  .stepper, .stepper.wide { height: calc(var(--tap-h) + 2px); }
   .stepper.wide { width: 100%; }
   .stepper.wide button, .stepper.wide button.big { flex: 1 1 0; width: auto; }
   .stepper.wide input { flex: 1.2 1 0; width: auto; min-width: 0; }
@@ -406,7 +409,7 @@ td .mark, .chip + .mark, .rowname .mark { width: 28px; height: 28px; }
 @media (max-width: 900px) { .combo .foods { flex-wrap: wrap; } .combo .chip { white-space: normal; } }
 .combo .row2 { display: flex; align-items: center; gap: var(--s-4); flex-wrap: wrap; }
 .combo .row2 .stepper { margin-left: auto; }
-@media (max-width: 900px) { .combo .row2 .stepper { margin-left: 0; width: 100%; height: var(--tap-h); } .combo .row2 .stepper button { flex: 0 0 56px; width: auto; } .combo .row2 .stepper .count { flex: 1; } }
+@media (max-width: 900px) { .combo .row2 .stepper { margin-left: 0; width: 100%; height: calc(var(--tap-h) + 2px); } .combo .row2 .stepper button { flex: 0 0 56px; width: auto; } .combo .row2 .stepper .count { flex: 1; } }
 .empty { color: var(--ink-3); font-style: italic; padding: var(--s-2) 0; }
 
 /* ---- tables ---------------------------------------------------------------- */
@@ -558,3 +561,8 @@ tr.panel .k { color: var(--ink-3); font-family: var(--font-num); font-size: 11px
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   button:active { transform: none; }
 }
+
+/* `all: unset` on the custom buttons (steppers, marks, sort headers, expand, tiles) also
+   clears the focus ring above, and their selectors outrank `:focus-visible`. Repeated last,
+   at a specificity none of them reaches, so keyboard focus is visible on every control. */
+html body :focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--focus); position: relative; z-index: 3; }
