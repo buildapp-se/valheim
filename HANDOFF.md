@@ -6,6 +6,8 @@ nextAction: Patrik decides whether the datamined wiki pages are enough to drop t
 blockers: []
 reviewedAt: 2026-11-02
 ---
+**2026-11-04, mutationstest (gren `claude/mutation-2026-11-04`, PR #2, inte mergad).** Stryker 9 med command runner mot `npm test` på `src/model.ts`, den enda rena logikfilen: 69,23 % till 89,35 % (169 mutanter). Åtta nya kontroller i `test.mjs` (15 till 23): `getItem` före `loadItems`, råvaror, `gather` med valen i omvänd ordning (djupet på delade mellanvaror), noll och negativa val, varje builds formel, `sumOf` och tie-break i `bestCombos`. De 18 kvar är UI-text i `BUILDS` eller likvärdiga. Ingen bugg, ingen produktionskod ändrad. TypeScript 7 saknar API:t Stryker skriver om tsconfig med: peka `tsconfigFile` på en fil som inte finns. PR #1 lägger in en post på samma ställe, så den som mergas sist får en enkel konflikt (behåll båda).
+
 **2026-11-02:** kontaktadressen är nu `kontakt@buildapp.se` (förut `kontakt@orgutveckling.se`). Integritetstexten version 1.2.
 
 **2026-09-24, audits från aifabriken (`tools/audit-run.mjs`).** Actions: `persist-credentials: false` på checkout i deploy.yml. Nya auditrader Secrets och Actions, båda pass.

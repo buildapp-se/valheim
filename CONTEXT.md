@@ -99,3 +99,4 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - OWASP Top 10: 2026-10-30, warn, code review (Mistral Large, medium and high checked by Claude), no live probe; 0 high, 1 medium: no CSP in markup, zone CSP lacks script-src (shared zone rule)
 - ZAP baseline: 2026-10-27, n/a, static site on GitHub Pages with no server, cookies or forms; headers, TLS and markup are covered by their own columns, so a passive ZAP scan would repeat them
 - Dependabot: 2026-10-29, pass, 0 open alerts
+- Mutation: 2026-11-04, pass, Stryker 9 (command runner on npm test) on src/model.ts: 89,35 % (69,23), 18 surviving reviewed: 12 build labels and hints (UI text), 6 equivalent; tests by Claude; ui.ts and app.ts not run (DOM at load)
