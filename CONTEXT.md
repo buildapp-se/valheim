@@ -67,6 +67,41 @@ section, the chosen biome and the primary action. Dark theme only.
   `stationIcon()` matches the **primary** station at the start of the string.
 - Deploy: GitHub Actions builds, runs `npm test`, publishes `index.html`, `privacy.html`, `style.css`, `dist/*.js` and `icons/*.png` to Pages. A failing check blocks the deploy.
 
+```mermaid
+graph LR
+  USER[Browser]
+  WIKI[valheim.weirdgloop.org wiki tables]
+
+  subgraph SRC["src/ compiled by tsc"]
+    DATA[data.ts items]
+    MODEL[model.ts gather and scoring]
+    UI[ui.ts helpers]
+    APP[app.ts rendering]
+  end
+
+  LS[(localStorage)]
+  GHA[GitHub Actions test and deploy]
+  PAGES[GitHub Pages buildapp.se/valheim]
+
+  WIKI --> DATA
+  DATA --> MODEL
+  MODEL --> APP
+  UI --> APP
+  APP --> LS
+  GHA --> PAGES
+  USER --> PAGES
+  PAGES --> APP
+```
+
+## Stack
+
+- Frontend: vanilla TypeScript and DOM, no framework, no bundler
+- Code: TypeScript strict, compiled by `tsc` to `dist/`
+- Data: `src/data.ts`, taken from the weirdgloop wiki, state in localStorage, no backend
+- Tests: `npm test` (`tsc` and `node test.mjs`)
+- CI: GitHub Actions runs the tests and publishes to Pages; a failing check blocks the deploy
+- Hosting: GitHub Pages, buildapp.se/valheim
+
 ## Data
 
 Source: the Food and Mead tables on `valheim.weirdgloop.org` (CC BY-NC-SA), read 2026-09-14, Valheim 1.0.12. That wiki is the only one with Deep North rows; Fandom stops at Ashlands, wiki.gg blocks scripted reads. Resource sources come from each item's wiki page. Credit is in the footer.
