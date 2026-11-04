@@ -6,6 +6,8 @@ nextAction: Patrik decides whether the datamined wiki pages are enough to drop t
 blockers: []
 reviewedAt: 2026-11-02
 ---
+**2026-11-04, förbättringsrunda (gren `claude/forbattringar-2026-11-04`, PR #1, inte mergad eller deployad).** Fyra rättningar, en commit var. (1) Staplarna: `aria-label` på `<span>` utan roll (axe `aria-prohibited-attr`, 464 noder med biom valt; tidigare axe-körningar såg bara förstabesöket). Nu ett `role="img"` per stapel med hela avläsningen. (2) Tryckytor under 900 px: matpiller 32 till 44 px, märket efter en pille 28 till 44, stegknappar 42 till 44 (ramen åt 2 px), sekretesssidans tillbakalänk 23 till 44. (3) Fokusringen syntes inte på knappar med `all: unset` (stegknappar, märken, sorteringsrubriker, expand, biomrutor): 251 av 400 tabbstopp utan ring, nu 0. Hopplänken sköt ned sidhuvudet vid fokus, nu ligger den ovanpå. (4) `icons/og.png` renderad från nya `og.source.html` i stället för skärmklippet med avklippt rubrik. Verifierat lokalt: `npm test` 15 kontroller gröna, axe 0 överträdelser vid 390 och 1280 px i båda lägena, ingen horisontell scroll vid 390. Inte gjort: kontrasten på avbockad resurs (kräver smakbeslut, se BACKLOG), desktopkontrollerna på 36 px (medvetet val för mus). Inte mätt live.
+
 **2026-11-02:** kontaktadressen är nu `kontakt@buildapp.se` (förut `kontakt@orgutveckling.se`). Integritetstexten version 1.2.
 
 **2026-09-24, audits från aifabriken (`tools/audit-run.mjs`).** Actions: `persist-credentials: false` på checkout i deploy.yml. Nya auditrader Secrets och Actions, båda pass.
