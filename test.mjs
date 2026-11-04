@@ -2,7 +2,10 @@
 // Prints one line per check on failure; exits non-zero if anything fails.
 import assert from 'node:assert/strict';
 import { ITEMS } from './dist/data.js';
-import { BIOMES, BUILDS, bestCombos, biomeRank, gather, getItem, loadItems, portionStep, rawMaterials, snap, sumOf } from './dist/model.js';
+import { BIOMES, BUILDS, NotFoundError, allItems, bestCombos, biomeRank, gather, getItem, isRaw, loadItems, portionStep, rawMaterials, snap, sumOf } from './dist/model.js';
+
+// a second copy of the module, never loaded: getItem must fail cleanly before loadItems
+const fresh = await import('./dist/model.js?fresh');
 
 loadItems(ITEMS);
 let failed = 0;
@@ -108,6 +111,64 @@ check('warrior score punishes imbalance', () => {
 });
 check('sumOf takes the shortest duration', () => {
   assert.equal(sumOf([getItem('Raspberries'), getItem('Serpent stew')]).duration, 600);
+});
+
+// ---- mutation test 2026-11-04: checks for what Stryker showed the suite above let through ----
+const food = (name, health, stamina, eitr, healing, duration) => ({ name, biome: 'Meadows', source: 'test', food: { health, stamina, eitr, healing, duration } });
+const build = (id) => BUILDS.find((b) => b.id === id);
+
+check('getItem throws NotFoundError for unknown names and before loadItems', () => {
+  assert.throws(() => getItem('Nope'), (e) => e instanceof NotFoundError && e.message === 'Unknown item: Nope');
+  assert.throws(() => fresh.getItem('Bread'), (e) => e instanceof fresh.NotFoundError && e.message === 'Unknown item: Bread');
+  assert.equal(getItem('bREAD').name, 'Bread');
+  assert.equal(allItems(), ITEMS);
+  assert.deepEqual(fresh.allItems(), []);
+});
+check('isRaw, rawMaterials and portionStep on raw resources and recipes', () => {
+  assert.equal(isRaw(getItem('Barley')), true);
+  assert.equal(isRaw(getItem('Bread')), false);
+  assert.deepEqual([...rawMaterials(getItem('Bread'))], ['Barley']);
+  assert.deepEqual([...rawMaterials(getItem('Barley'))], ['Barley']);
+  assert.equal(portionStep(getItem('Raspberries')), 1);
+  assert.equal(snap(getItem('Raspberries'), 3), 3);
+  assert.equal(snap(getItem('Sausages'), -5), 0);
+});
+check('gather gives the same totals whichever pick comes first', () => {
+  // Bread first reaches Barley flour at depth 2, Fish wraps then at depth 1: the deeper depth must win.
+  const g = gather({ Bread: 2, 'Fish wraps': 2 });
+  assert.equal(g.raw.get('Barley'), 18);
+  assert.deepEqual([...g.raw.keys()].sort(), ['Barley', 'Raw fish']);
+});
+check('gather skips zero and negative picks', () => {
+  const g = gather({ Bread: 0, Sausages: -4 });
+  assert.equal(g.raw.size, 0);
+  assert.deepEqual(g.steps, []);
+});
+check('every build scores by its formula', () => {
+  const s = { health: 100, stamina: 60, eitr: 30, healing: 3, duration: 900 };
+  assert.deepEqual(Object.fromEntries(BUILDS.map((b) => [b.id, b.score(s)])), { health: 100, stamina: 60, eitr: 30, warrior: 120, mage: 180, total: 190 });
+});
+check('sumOf adds healing, and an empty list lasts 0 seconds', () => {
+  assert.equal(sumOf([getItem('Raspberries'), getItem('Bread')]).healing, 3);
+  assert.deepEqual(sumOf([]), { health: 0, stamina: 0, eitr: 0, healing: 0, duration: 0 });
+});
+check('bestCombos returns exactly top, equal scores broken on healing, then on the longer shortest duration', () => {
+  // the short ones first, so the winner is not simply the first combo tried
+  const same = [food('D', 10, 0, 0, 1, 600), food('E', 10, 0, 0, 1, 600), food('A', 10, 0, 0, 1, 1800), food('B', 10, 0, 0, 1, 1800), food('C', 10, 0, 0, 1, 1800)];
+  assert.equal(bestCombos(same, build('health'), 3).length, 3);
+  assert.equal(bestCombos(same, build('health')).length, 5);
+  // every combo scores 30 and heals 3; only A, B and C together last 1800 s
+  assert.deepEqual(bestCombos(same, build('health'), 1)[0].foods.map((f) => f.name), ['A', 'B', 'C']);
+  const heal = [food('A', 10, 0, 0, 1, 1800), food('B', 10, 0, 0, 1, 1800), food('C', 10, 0, 0, 1, 1800), food('D', 10, 0, 0, 5, 600)];
+  // healing comes before duration: a D combo heals 7 and wins although it lasts only 600 s
+  const [first, second] = bestCombos(heal, build('health'), 2);
+  assert.equal(first.sum.healing, 7);
+  assert.equal(second.sum.healing, 7);
+});
+check('bestCombos keeps a later combo that ties the last place but heals more', () => {
+  const foods = [food('A', 10, 0, 0, 1, 600), food('B', 10, 0, 0, 1, 600), food('C', 10, 0, 0, 1, 600), food('D', 10, 0, 0, 9, 600)];
+  const [best] = bestCombos(foods, build('health'), 1);
+  assert.ok(best.foods.some((f) => f.name === 'D'));
 });
 
 if (failed) {
