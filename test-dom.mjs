@@ -73,7 +73,9 @@ const change = (input, patch) => {
   fire(input, 'change');
 };
 const button = (label, root = document) => {
-  const b = $$('button', root).find((x) => text(x) === label || x.getAttribute('aria-label') === label);
+  // "Add one round" also finds a combo stepper's "Add one round of A, B, and C"
+  const round = label.endsWith(' one round') ? `${label} of ` : null;
+  const b = $$('button', root).find((x) => text(x) === label || x.getAttribute('aria-label') === label || (round && x.getAttribute('aria-label')?.startsWith(round)));
   assert.ok(b, `no button "${label}"`);
   return b;
 };
@@ -269,6 +271,10 @@ check('combo stepper adds and removes one craft of each of its three foods', () 
   const stepper = () => $('.combo .stepper', build('Max health'));
   assert.equal(text($('.count', stepper())), '0');
   assert.equal(button('Remove one round', stepper()).disabled, true);
+  assert.deepEqual($$('button', stepper()).map((b) => b.getAttribute('aria-label')), [
+    'Remove one round of Cooked boar meat, Cooked deer meat, and Grilled neck tail',
+    'Add one round of Cooked boar meat, Cooked deer meat, and Grilled neck tail',
+  ]);
   click(button('Add one round', stepper()));
   click(button('Add one round', stepper()));
   assert.deepEqual(saved().picks, { 'Cooked boar meat': 2, 'Cooked deer meat': 2, 'Grilled neck tail': 2 });

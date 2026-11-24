@@ -419,12 +419,14 @@ function stepCombo(c: Combo, dir: 1 | -1): void {
 /** − N +, where N is how many full rounds of this trio the gather list holds */
 function comboStepper(c: Combo): HTMLElement {
   const n = Math.min(...c.foods.map((f) => Math.floor((state.picks[f.name] ?? 0) / snap(f, 1))));
+  // name the trio: the page holds dozens of these steppers, and "Add one round" alone says not which
+  const of = `of ${new Intl.ListFormat('en').format(c.foods.map((f) => f.name))}`;
   return h(
     'span',
     { class: 'stepper', title: 'One craft of each food, in the gather list' },
-    h('button', { type: 'button', 'aria-label': 'Remove one round', onclick: () => stepCombo(c, -1), disabled: c.foods.every((f) => !state.picks[f.name]) }, ic('ui-remove', 'ic-14')),
+    h('button', { type: 'button', 'aria-label': `Remove one round ${of}`, onclick: () => stepCombo(c, -1), disabled: c.foods.every((f) => !state.picks[f.name]) }, ic('ui-remove', 'ic-14')),
     h('b', { class: 'count' }, String(n)),
-    h('button', { type: 'button', class: 'plus', 'aria-label': 'Add one round', onclick: () => stepCombo(c, 1) }, ic('ui-add', 'ic-14')),
+    h('button', { type: 'button', class: 'plus', 'aria-label': `Add one round ${of}`, onclick: () => stepCombo(c, 1) }, ic('ui-add', 'ic-14')),
   );
 }
 
