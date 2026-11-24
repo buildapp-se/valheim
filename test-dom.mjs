@@ -451,6 +451,21 @@ check('gather list: steps in whole crafts, five-craft buttons, typed counts snap
   assert.equal(gatherRow('Carrot soup').className, 'row');
   assert.equal($('.mark.info', gatherRow('Carrot soup')), null, 'yield 1: no info mark');
 });
+check('a + pressed straight after typing a count keeps both', () => {
+  // the press blurs the input, so change fires while the button is held
+  const plus = button('Add 1 Carrot soup', gatherRow('Carrot soup'));
+  fire(plus, 'pointerdown');
+  change($('input', gatherRow("Queen's jam")), { value: '7' });
+  assert.equal(saved().picks["Queen's jam"], 8, 'typed count committed at once');
+  assert.ok(document.contains(plus), 'no render under the held button, or its click is lost');
+  fire(plus, 'pointerup');
+  click(plus);
+  assert.equal(saved().picks["Queen's jam"], 8);
+  assert.equal(saved().picks['Carrot soup'], 1);
+  assert.equal($('input', gatherRow("Queen's jam")).value, '8');
+  click(button("Remove 20 Queen's jam", gatherRow("Queen's jam")));
+  click(button('Remove 1 Carrot soup', gatherRow('Carrot soup')));
+});
 check('keyboard focus survives the re-render a click causes', () => {
   const add = button('Add 1 Carrot soup', gatherRow('Carrot soup'));
   add.focus();

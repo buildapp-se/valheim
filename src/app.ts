@@ -77,6 +77,23 @@ function update(patch: Partial<State>): void {
   render();
 }
 
+/** a pointer press in progress, and what to run once it has ended (and its click has fired) */
+let pressing = false;
+let afterPress: (() => void) | null = null;
+document.addEventListener('pointerdown', () => (pressing = true), true);
+for (const type of ['pointerup', 'pointercancel']) {
+  document.addEventListener(
+    type,
+    () => {
+      pressing = false;
+      const f = afterPress;
+      afterPress = null;
+      if (f) setTimeout(f);
+    },
+    true,
+  );
+}
+
 /** view-only state: never persisted, never part of a URL */
 let pickerChoice: Biome | null = null;
 let gatherQuery = '';
@@ -653,8 +670,13 @@ function stepper(it: Item): HTMLElement {
         const picks = { ...state.picks };
         if (v === 0) delete picks[it.name];
         else picks[it.name] = v;
-        // after the Tab or click that fired change has moved focus, so render keeps it there
-        setTimeout(() => update({ picks }));
+        // commit now, so a + clicked straight after typing adds to the typed value. Render later:
+        // after the Tab has moved focus, or after the press that fired change has become a click,
+        // since a render under a held button would replace it and the click would be lost
+        state.picks = picks;
+        save();
+        if (pressing) afterPress = render;
+        else setTimeout(render);
       },
     }),
     h('button', { type: 'button', class: 'plus', 'aria-label': `Add ${step} ${it.name}`, onclick: () => addPick(it, 1) }, `+${step}`),
