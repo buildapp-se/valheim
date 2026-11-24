@@ -208,7 +208,7 @@ input[type='checkbox']:hover { border-color: var(--ember); }
    jump when they fill (browsers without blocking=render paint the empty shell first) */
 main { max-width: var(--content-max); margin: 0 auto; min-height: 100vh; align-content: start; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-12); }
 .panel { padding: 0; min-width: 0; }
-.panel[hidden], .picker[hidden] { display: none; }
+.panel[hidden], .picker[hidden], .tabs[hidden] { display: none; }
 
 .head { display: flex; flex-wrap: wrap; gap: var(--s-3) var(--s-5); align-items: center; margin-bottom: var(--s-4); }
 .head h2 { margin-right: var(--s-1); }

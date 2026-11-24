@@ -116,7 +116,7 @@ await boot();
 
 check('first visit shows only the picker, Continue disabled until a tile is chosen', () => {
   assert.equal($('#picker').hidden, false);
-  for (const id of ['best', 'overview', 'gather', 'resources']) assert.equal($(`#${id}`).hidden, true, id);
+  for (const id of ['nav', 'best', 'overview', 'gather', 'resources']) assert.equal($(`#${id}`).hidden, true, id);
   assert.equal($('#biome-control').hidden, true);
   assert.equal($('#biome-control').childNodes.length, 0);
   assert.equal($('#gather-badge').hidden, true);
@@ -144,7 +144,7 @@ check('a tile is a choice, Continue makes it; saved picks are snapped to whole c
   assert.equal(saved().biome, 'Swamp');
   assert.deepEqual(saved().picks, { Bread: 2, Sausages: 8 });
   assert.equal($('#picker').hidden, true);
-  for (const id of ['best', 'overview', 'gather', 'resources']) assert.equal($(`#${id}`).hidden, false, id);
+  for (const id of ['nav', 'best', 'overview', 'gather', 'resources']) assert.equal($(`#${id}`).hidden, false, id);
 });
 
 // ---- header -----------------------------------------------------------------------------

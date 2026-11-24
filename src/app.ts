@@ -289,7 +289,8 @@ const RIDGE = `<svg class="ridge" viewBox="0 0 1400 440" preserveAspectRatio="no
 function renderPicker(): void {
   const el = document.getElementById('picker') as HTMLElement;
   el.hidden = state.biome !== null;
-  for (const id of ['best', 'overview', 'gather', 'resources']) (document.getElementById(id) as HTMLElement).hidden = state.biome === null;
+  // the nav too: its links point at those sections, so on the first visit they would go nowhere
+  for (const id of ['nav', 'best', 'overview', 'gather', 'resources']) (document.getElementById(id) as HTMLElement).hidden = state.biome === null;
   if (state.biome !== null) return;
   const chosen = pickerChoice;
   replace(
