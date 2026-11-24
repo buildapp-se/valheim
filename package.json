@@ -4,10 +4,11 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "test": "tsc && node test.mjs",
+    "test": "tsc && node test.mjs && node test-dom.mjs",
     "start": "npx -y serve -l 8787 ."
   },
   "devDependencies": {
+    "linkedom": "0.18.15",
     "typescript": "^7.0.2"
   }
 }
