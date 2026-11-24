@@ -773,7 +773,7 @@ function renderGather(): void {
         { class: 'result' },
         h('div', { class: 'colhead' }, 'Raw resources'),
         picked.length === 0
-          ? h('div', { class: 'empty' }, 'Nothing picked yet.')
+          ? h('div', { class: 'empty' }, 'Nothing picked yet. Use + on a dish or mead, or on a combo under Best food.')
           : [
               ...[...rawByBiome.entries()]
                 .sort((a, b) => biomeRank(a[0]) - biomeRank(b[0]))

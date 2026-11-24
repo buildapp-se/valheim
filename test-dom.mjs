@@ -155,7 +155,7 @@ check('picks from a later biome stay saved but count nowhere', () => {
   assert.equal($('#gather-badge').hidden, true);
   assert.equal(text($('#gather .head .mono')), '0 entries · 0 portions');
   assert.equal(text($('#gather-hidden')), '2 more entries hidden by feasts, resources or biome, not counted');
-  assert.equal(text($('#gather .result .empty')), 'Nothing picked yet.');
+  assert.equal(text($('#gather .result .empty')), 'Nothing picked yet. Use + on a dish or mead, or on a combo under Best food.');
   click(button('Clear', $('#gather')));
   assert.deepEqual(saved().picks, {});
   assert.equal($('#gather-hidden'), null);
