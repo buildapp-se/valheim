@@ -101,7 +101,7 @@ graph LR
 - Frontend: vanilla TypeScript and DOM, no framework, no bundler
 - Code: TypeScript strict, compiled by `tsc` to `dist/`
 - Data: `src/data.ts`, taken from the weirdgloop wiki, state in localStorage, no backend
-- Tests: `npm test` (`tsc` and `node test.mjs`)
+- Tests: `npm test` (`tsc`, `node test.mjs` for data and model, `node test-dom.mjs` for the page: the compiled app run against `index.html` in linkedom and driven by clicks)
 - CI: GitHub Actions runs the tests and publishes to Pages; a failing check blocks the deploy
 - Hosting: GitHub Pages, buildapp.se/valheim
 
@@ -121,7 +121,7 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - TLS: 2026-09-16, pass, SSL Labs A+ on buildapp.se, TLS 1.2 minimum and HSTS since today
 - Lighthouse: 2026-11-24, pass, live mobile first visit: performance 89, a11y 100, best practices 100, SEO 100, CLS 0,031 (was 0,49), LCP 3,0 s, TBT 0 ms
 - Markup: 2026-11-24, pass, W3C Nu on the live page: 0 errors (the `blocking="render"` attribute is accepted), 5 warnings, all "section lacks heading" on the sections app.js fills; broken links last checked 2026-09-16 (0)
-- UX: 2026-09-16, pass, 0 targets under 44 px after the fix (tabs and skip link 44 px), 5 of 6 script checks pass, no --interact
+- UX: 2026-11-24, pass, 7 of 7 script checks pass on first visit (local, --interact), 6 of 7 with a biome chosen: the Fitts warn is the 18 px checkboxes, each inside a label of at least 44 px, so the script measured the input and not the target; review finding fixed: the empty gather list now says what to do (was 2026-09-16, pass, 5 of 6)
 - npm audit: 2026-09-24, pass, 0 in production, 0 in the dev chain
 - Secrets: 2026-09-24, pass, gitleaks 0 findings in 19 commits
 - Actions: 2026-09-24, pass, zizmor 0 high, 0 medium, 0 low

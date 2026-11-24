@@ -38,7 +38,7 @@ npm ci
 npm test
 ```
 
-`npm test` compiles with `tsc` and runs `test.mjs`: every ingredient resolves, no item needs a later biome than its own, gather rounding on shared intermediates, and the wiki's published max combos at Ashlands (300 health, 270 eitr).
+`npm test` compiles with `tsc` and runs `test.mjs`: every ingredient resolves, no item needs a later biome than its own, gather rounding on shared intermediates, and the wiki's published max combos at Ashlands (300 health, 270 eitr). Then `test-dom.mjs` loads `dist/app.js` into `index.html` in linkedom and clicks through every section; `--fail-fast` stops at the first failure (used by mutation runs).
 
 Local run: `python -m http.server 8787` in the repo root, then open http://127.0.0.1:8787/.
 

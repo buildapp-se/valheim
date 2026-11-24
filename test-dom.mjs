@@ -43,6 +43,7 @@ const check = (name, fn) => {
   } catch (e) {
     failed++;
     console.log(`FAIL ${name}: ${e.message}`);
+    if (process.argv.includes('--fail-fast')) process.exit(1); // mutation runs: one failure is enough
   }
 };
 const $ = (sel, root = document) => root.querySelector(sel);
