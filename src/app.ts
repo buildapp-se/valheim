@@ -308,7 +308,7 @@ function renderPicker(): void {
             'aria-pressed': String(chosen === x),
             onclick: () => {
               pickerChoice = x;
-              renderPicker();
+              render(); // through render so keyboard focus stays on the tile
             },
           },
           h('span', { class: 'tile-top' }, ic(biomeIcon(x)), h('span', { class: 'num' }, String(BIOME_INDEX.get(x)).padStart(2, '0'))),
@@ -653,7 +653,8 @@ function stepper(it: Item): HTMLElement {
         const picks = { ...state.picks };
         if (v === 0) delete picks[it.name];
         else picks[it.name] = v;
-        update({ picks });
+        // after the Tab or click that fired change has moved focus, so render keeps it there
+        setTimeout(() => update({ picks }));
       },
     }),
     h('button', { type: 'button', class: 'plus', 'aria-label': `Add ${step} ${it.name}`, onclick: () => addPick(it, 1) }, `+${step}`),
@@ -867,16 +868,41 @@ function renderBadge(): void {
 }
 
 // ---- render -------------------------------------------------------------------------------
+/**
+ * render() rebuilds every section, which drops keyboard focus to <body>. This names the focused
+ * control by its container id, its label and which of the same-named controls it is, so the
+ * rebuilt twin can take focus back.
+ */
+type FocusKey = { box: string; name: string; nth: number };
+const controlName = (el: Element): string =>
+  `${el.tagName} ${el.getAttribute('aria-label') ?? (el.closest('label') ?? el).textContent?.trim() ?? ''}`;
+function focusKey(): FocusKey | null {
+  const el = document.activeElement;
+  const box = el?.closest('[id]');
+  if (!el || !box || el === document.body) return null;
+  const name = controlName(el);
+  const same = [...box.querySelectorAll(el.tagName)].filter((x) => controlName(x) === name);
+  return { box: box.id, name, nth: same.indexOf(el) };
+}
+function restoreFocus(k: FocusKey | null): void {
+  if (!k || document.activeElement !== document.body) return;
+  const same = [...(document.getElementById(k.box)?.querySelectorAll(k.name.split(' ')[0] as string) ?? [])].filter((x) => controlName(x) === k.name);
+  (same[k.nth] as HTMLElement | undefined)?.focus({ preventScroll: true });
+}
+
 function render(): void {
+  const focus = focusKey();
   closePopover();
   renderBiome();
   renderPicker();
   renderBadge();
-  if (state.biome === null) return;
-  renderBest();
-  renderOverview();
-  renderGather();
-  renderResources();
+  if (state.biome !== null) {
+    renderBest();
+    renderOverview();
+    renderGather();
+    renderResources();
+  }
+  restoreFocus(focus);
 }
 render();
 

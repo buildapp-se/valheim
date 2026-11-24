@@ -26,7 +26,15 @@ Object.assign(globalThis, {
   IntersectionObserver: class {
     observe() {}
   },
+  // the typed-count commit waits one tick for focus to settle; run it at once so checks stay synchronous
+  setTimeout: (fn) => fn(),
 });
+// linkedom has no focus: a minimal model where focus() sets activeElement and a detached element drops it to body
+let active = null;
+Object.defineProperty(document, 'activeElement', { get: () => (active && document.contains(active) ? active : document.body) });
+HTMLElement.prototype.focus = function () {
+  active = this.disabled ? active : this;
+};
 // linkedom has no layout: a 1000 px wide window, every element at (anchorLeft, 300), 200 x 40
 let anchorLeft = 50;
 HTMLElement.prototype.getBoundingClientRect = () => ({ top: 300, left: anchorLeft });
@@ -442,6 +450,21 @@ check('gather list: steps in whole crafts, five-craft buttons, typed counts snap
   assert.equal("Queen's jam" in saved().picks, false);
   assert.equal(gatherRow('Carrot soup').className, 'row');
   assert.equal($('.mark.info', gatherRow('Carrot soup')), null, 'yield 1: no info mark');
+});
+check('keyboard focus survives the re-render a click causes', () => {
+  const add = button('Add 1 Carrot soup', gatherRow('Carrot soup'));
+  add.focus();
+  click(add);
+  const now = document.activeElement;
+  assert.notEqual(now, add, 'the old button is gone');
+  assert.equal(now.getAttribute('aria-label'), 'Add 1 Carrot soup');
+  assert.ok(gatherRow('Carrot soup').contains(now));
+  const comboPlus = $$('#best .combo button.plus')[2];
+  comboPlus.focus();
+  click(comboPlus);
+  assert.equal($$('#best .combo button.plus').indexOf(document.activeElement), 2, 'same-named buttons: the same one by position');
+  click(button('Remove 1 Carrot soup', gatherRow('Carrot soup')));
+  click(button('Remove one round', $$('#best .combo')[2]));
 });
 check('gather totals: raw resources by biome with source, crafting order deepest first', () => {
   click(button('Add 1 Deer stew', gatherRow('Deer stew')));
