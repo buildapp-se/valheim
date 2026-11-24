@@ -119,8 +119,8 @@ Items flagged `unverified` show a warning mark opening a popover with the reason
 Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; conventions in elwyn-dash `docs/security.md`.
 - Headers: 2026-09-16, pass, 6 of 6 on buildapp.se via a host-scoped Transform Rule on the zone, measured after the change
 - TLS: 2026-09-16, pass, SSL Labs A+ on buildapp.se, TLS 1.2 minimum and HSTS since today
-- Lighthouse: 2026-09-16, pass, a11y 100, best practices 100, SEO 100, CLS 0,49 flagged (mobile, no perf)
-- Markup: 2026-09-16, pass, W3C 0 errors, 5 warnings after the fix (icon hrefs encoded, privacy headings h2); 0 broken links
+- Lighthouse: 2026-11-24, pass, live mobile first visit: performance 89, a11y 100, best practices 100, SEO 100, CLS 0,031 (was 0,49), LCP 3,0 s, TBT 0 ms
+- Markup: 2026-11-24, pass, W3C Nu on the live page: 0 errors (the `blocking="render"` attribute is accepted), 5 warnings, all "section lacks heading" on the sections app.js fills; broken links last checked 2026-09-16 (0)
 - UX: 2026-09-16, pass, 0 targets under 44 px after the fix (tabs and skip link 44 px), 5 of 6 script checks pass, no --interact
 - npm audit: 2026-09-24, pass, 0 in production, 0 in the dev chain
 - Secrets: 2026-09-24, pass, gitleaks 0 findings in 19 commits
@@ -132,7 +132,7 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - Actions (automated): 2026-10-06, pass, zizmor 0 high, 0 medium, 0 low; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a/valheim.json
 - Markup (automated): 2026-10-06, blocked, 1 targets; 0 failed, 1 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a2/valheim.json
 - WCAG 2.2 AA (automated): 2026-10-06, blocked, 1 targets; 0 failed, 1 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a2/valheim.json
-- OG image: 2026-11-04, pass, 1200x630 PNG, https://buildapp.se/valheim/icons/og.png; live tag and image answer 200 (the older page screenshot); the new card from og.source.html checked locally only, verdict reflects the local check until deployed
+- OG image: 2026-11-24, pass, 1200x630 PNG, https://buildapp.se/valheim/icons/og.png; live file is byte-identical (sha256) to the card rendered from og.source.html, og tags live
 - Database: 2026-10-25, none, localStorage
 - OWASP Top 10: 2026-10-30, warn, code review (Mistral Large, medium and high checked by Claude), no live probe; 0 high, 1 medium: no CSP in markup, zone CSP lacks script-src (shared zone rule)
 - ZAP baseline: 2026-10-27, n/a, static site on GitHub Pages with no server, cookies or forms; headers, TLS and markup are covered by their own columns, so a passive ZAP scan would repeat them
