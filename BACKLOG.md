@@ -47,3 +47,7 @@ Fynd från den automatiska sviten (aifabriken `tools/audit-suite.ts`: headers, n
 ux-audit-skriptet lokalt (390 px, --interact) på förstabesöket och med ett biom valt, plus skärmbilder i 390 och 1440 px av väljaren, best food, översikten, tom och fylld samlingslista och resurserna. Raden står under `## Audits` i CONTEXT.md.
 
 - [x] `[P3]` (rättad 2026-11-24, `7e1dfbc`) UX, Paradox of the Active User: tom samlingslista (`#gather .result .empty`) sa bara "Nothing picked yet." Nu också hur: "Use + on a dish or mead, or on a combo under Best food." Kontrollerad i `test-dom.mjs`.
+
+## Funktionspass 2026-11-24
+
+- [x] `[P2]` (rättad 2026-11-24, `3f93064`) Bugg: varje klick ritar om hela sidan och tappade tangentbordsfokus till `<body>`. Enter på +1 i samlingslistan lade till en gång, nästa Enter gjorde inget; Tab började om från sidans topp. Gällde stegknappar, kombostegare, sorteringsrubriker, resursrutor och biomrutorna på förstabesöket. Nu fokuseras samma kontroll i den nya sidan. Verifierat: Playwright-skript i headless Chrome mot lokal server (Enter två gånger, kombo +, sorteringsrubrik, resursruta, biomruta, inskrivet antal plus Tab landar på +1) failar på gamla koden och passerar på nya; musklick ger ingen fokusring och inget scrollhopp; ny kontroll i `test-dom.mjs` failar på gamla koden. Firefox och Safari inte testat.
