@@ -102,6 +102,18 @@ function inBiome(it: Item): boolean {
 function visibleFoods(): Item[] {
   return foods.filter((f) => inBiome(f) && (state.feasts || !f.food?.feast) && canMake(f));
 }
+function visibleMeads(): Item[] {
+  return meads.filter((m) => inBiome(m) && canMake(m));
+}
+/**
+ * picks whose dish or mead has a row in the gather list. The rest stay saved, so re-ticking a
+ * resource or raising the biome brings them back, but they count nowhere: a hidden dish must not
+ * put its ingredients in the totals, where it could not be stepped down either.
+ */
+function shownPicks(): Record<string, number> {
+  const shown = new Set([...visibleFoods(), ...visibleMeads()].map((i) => i.name));
+  return Object.fromEntries(Object.entries(state.picks).filter(([name, n]) => n > 0 && shown.has(name)));
+}
 function canMake(it: Item): boolean {
   const off = new Set(state.off);
   for (const r of rawOf.get(it.name) ?? []) if (off.has(r)) return false;
@@ -700,16 +712,18 @@ function craftText(s: CraftStep): string {
   return s.crafts === s.makes ? `${s.crafts}` : `${s.crafts} craft${s.crafts > 1 ? 's' : ''} → ${s.makes}`;
 }
 function renderGather(): void {
-  const picked = Object.entries(state.picks).filter(([, n]) => n > 0);
+  const active = shownPicks();
+  const picked = Object.entries(active);
+  const hidden = Object.values(state.picks).filter((n) => n > 0).length - picked.length;
   const portions = picked.reduce((a, [, n]) => a + n, 0);
-  const g = gather(state.picks);
+  const g = gather(active);
   const rawByBiome = new Map<Biome, Array<[string, number]>>();
   for (const [name, n] of [...g.raw.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     const b = getItem(name).biome;
     rawByBiome.set(b, [...(rawByBiome.get(b) ?? []), [name, n]]);
   }
   const visFoods = visibleFoods().sort((a, b) => biomeRank(b.biome) - biomeRank(a.biome) || total(b) - total(a));
-  const visMeads = meads.filter((m) => inBiome(m) && canMake(m)).sort((a, b) => biomeRank(b.biome) - biomeRank(a.biome) || a.name.localeCompare(b.name));
+  const visMeads = visibleMeads().sort((a, b) => biomeRank(b.biome) - biomeRank(a.biome) || a.name.localeCompare(b.name));
   replace(
     'gather',
     h(
@@ -717,7 +731,13 @@ function renderGather(): void {
       { class: 'head' },
       h('h2', {}, 'Gather list'),
       h('span', { class: 'mono muted' }, `${picked.length} ${picked.length === 1 ? 'entry' : 'entries'} · ${portions} portions`),
-      picked.length > 0 &&
+      hidden > 0 &&
+        h(
+          'span',
+          { class: 'count-note', id: 'gather-hidden' },
+          `${hidden} more ${hidden === 1 ? 'entry' : 'entries'} hidden by feasts, resources or biome, not counted`,
+        ),
+      picked.length + hidden > 0 &&
         h('span', { class: 'controls right' }, h('button', { class: 'small danger', onclick: () => update({ picks: {} }) }, ic('ui-clear', 'ic-14'), 'Clear')),
     ),
     h(
@@ -835,7 +855,7 @@ function renderResources(): void {
 let lastCount = -1;
 function renderBadge(): void {
   const badge = document.getElementById('gather-badge') as HTMLElement;
-  const n = Object.values(state.picks).filter((v) => v > 0).length;
+  const n = Object.keys(shownPicks()).length;
   badge.hidden = n === 0 || state.biome === null;
   badge.textContent = String(n);
   if (lastCount >= 0 && n > lastCount) {
