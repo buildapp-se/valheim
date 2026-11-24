@@ -53,7 +53,8 @@ section, the chosen biome and the primary action. Dark theme only.
   1200x630 after the fonts have loaded, and keep `og:image:alt` in `index.html` in step with it.
 - Four sections stay **one scrolling page**, not tabs: choosing a combo, checking the numbers and
   gathering is one workflow, and tabs would hide the gather list exactly while it is being filled.
-  The nav is sticky with scroll-spy and carries a live gather count.
+  The nav is sticky with scroll-spy and carries a live gather count. It is hidden on the first
+  visit until a biome is chosen, because the sections it links to are hidden too.
 
 ## Architecture
 
