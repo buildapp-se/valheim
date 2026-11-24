@@ -34,6 +34,12 @@ Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { get: () => 200 });
 Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { get: () => 40 });
 Object.defineProperty(document.documentElement, 'clientWidth', { get: () => 1000 });
 Object.assign(window, { scrollX: 0, scrollY: 0 });
+// browsers throw on an invalid tag name; linkedom does not, so a broken h() call would pass unseen
+const createElement = document.createElement.bind(document);
+document.createElement = (tag, ...rest) => {
+  if (!/^[a-z][a-z0-9-]*$/i.test(tag)) throw new Error(`InvalidCharacterError: <${tag}>`);
+  return createElement(tag, ...rest);
+};
 
 const KEY = 'valheim-food-planner:v1';
 let failed = 0;
@@ -140,6 +146,8 @@ check('header: spoiler line, biome select, a step to the next biome and show all
   assert.equal($('#biome-control select').value, 'Swamp');
   assert.equal($$('#biome-control option').length, 8);
   assert.equal(icon($('#biome-control .pick svg')), '#biome-swamp');
+  assert.equal($('#biome-control .pick svg').getAttribute('class'), 'ic ic-16');
+  assert.equal($('#biome-control select').getAttribute('aria-label'), 'Highest biome reached');
   assert.equal(text($('#biome-control .primary')), 'Next: Mountain');
   click($('#biome-control .primary'));
   assert.equal(saved().biome, 'Mountain');
@@ -176,15 +184,27 @@ check('six builds, top combos by formula, stat slots in fixed order', () => {
   assert.deepEqual($$('.sum .n', top).map((s) => s.title), ['Health', 'Stamina', 'Eitr', 'Total', 'Health per tick', 'Duration']);
   assert.deepEqual(comboNames($('.combo', build('Max stamina'))), ['Honey', 'Mushroom', 'Raspberries']);
   assert.equal(text($('.sum .d', $('.combo', build('Max stamina')))), '10:00');
+  assert.deepEqual($$('.sum .n', top).map((s) => s.className), ['n h', 'n s', 'n e', 'n t', 'n r', 'n d']);
+  assert.deepEqual($$('.sum .n svg', top).map(icon), ['#icon-health', '#icon-stamina', '#icon-eitr', '#icon-total', '#icon-regen', '#icon-duration']);
+  assert.equal($('.sum .n svg', top).getAttribute('class'), 'ic ic-14');
+});
+check('a colour legend above the builds and the overview', () => {
+  for (const id of ['best', 'overview']) {
+    const legend = $(`#${id} .legend`);
+    assert.deepEqual($$('span', legend).map(text), ['health', 'stamina', 'eitr', 'hp/tick (thin bar)'], id);
+    assert.deepEqual($$('i', legend).map((i) => i.getAttribute('style')), ['health', 'stamina', 'eitr', 'regen'].map((v) => `background:var(--${v})`));
+  }
 });
 check('combo bars: one labelled image, segments scaled to three of the strongest verified food (160)', () => {
   const top = $('.combo', build('Max health'));
-  const bar = $('.bar', top);
+  const bar = $('.bars > .bar', top);
   assert.equal(bar.getAttribute('role'), 'img');
+  assert.deepEqual($$('span', bar).map((s) => s.className), ['h', 's', 'e']);
   assert.equal(bar.getAttribute('aria-label'), 'Health 90, stamina 30, eitr 0');
   assert.deepEqual($$('span', bar).map((s) => s.getAttribute('style')), ['width:18.75%', 'width:6.25%', 'width:0%']);
   assert.deepEqual($$('span', bar).map((s) => s.title), ['Health 90', 'Stamina 30', 'Eitr 0']);
-  const regen = $('.regen', top);
+  const regen = $('.bars > .regen', top);
+  assert.equal(regen.getAttribute('role'), 'img');
   assert.equal(regen.getAttribute('aria-label'), '6 hp per tick');
   // hp/tick scale is three of the best single food (7 hp/tick): 6 / 21
   assert.equal(width($('span', regen)), ((100 * 6) / 21).toFixed(6));
@@ -193,6 +213,8 @@ check('combo bars: one labelled image, segments scaled to three of the strongest
 check('a food pill opens its station and ingredients; Esc, an outside click and a second click close it', () => {
   const chip = $('.chip', build('Max health'));
   assert.equal(chip.getAttribute('aria-label'), 'Cooked boar meat: show ingredients');
+  assert.equal(chip.getAttribute('type'), 'button');
+  assert.equal(chip.getAttribute('aria-expanded'), 'false');
   click(chip);
   assert.equal(popover().hidden, false);
   assert.equal(popover().textContent, 'Cooking station: 1× Boar meat');
@@ -389,11 +411,14 @@ check('an unverified food carries a warning mark that opens the reason', () => {
   assert.equal($('.mark.warn', rows()[0]), null);
 });
 check('gather list: steps in whole crafts, five-craft buttons, typed counts snap up', () => {
+  assert.ok(gatherNames().length > 10, String(gatherNames().length));
+  assert.equal(gatherNames().length, $$('#gather .list .row').length, 'no search typed: every row shows');
   const jam = gatherRow("Queen's jam");
   assert.equal(text($('.sub', jam)), 'Cauldron (1) ×4: 8× Raspberries, 6× Blueberries');
   assert.equal(icon($('.sub svg', jam)), '#station-cauldron');
   const info = $('.mark.info', jam);
   assert.equal(info.getAttribute('aria-label'), "Why Queen's jam steps in 4s");
+  assert.equal(icon($('svg', info)), '#ui-info');
   click(info);
   assert.equal(popover().textContent, 'One craft makes 4, so portions go in steps of 4.');
   click(info);
@@ -515,6 +540,8 @@ check('feasts: off by default, step by 10 portions, counted as feasts in the cra
   assert.equal($('input', checkbox('overview', 'Feasts')).checked, true);
   const feast = gatherRow("Sailor's bounty");
   assert.equal(text($('.tag-feast', feast)), 'FEAST');
+  assert.equal(icon($('.tag-feast svg', feast)), '#ui-feast');
+  assert.equal($('.tag-feast svg', feast).getAttribute('class'), 'ic ic-13');
   click($('.mark.info', feast));
   assert.equal(popover().textContent, 'A feast is placed with the Serving tray and serves 10 portions. Portions go in steps of 10. Stacks 5 per slot.');
   click($('.mark.info', feast));
@@ -548,6 +575,26 @@ check('blocked storage: the page still runs, starting at the picker', () => {
   click(button("Show everything, I don't mind spoilers"));
   assert.equal(text($('.spoiler-chip')), 'Spoilers: Deep North and earlier');
   assert.equal($('#biome-control .primary'), null);
+});
+check('Deep North: an eitr combo totals all three stats; a feast pill carries the feast mark', () => {
+  const sums = $$('.sum .n', $('.combo', build('Max eitr'))).map((s) => Number(text(s)));
+  assert.ok(sums[2] > 0, 'an eitr food');
+  assert.equal(sums[3], sums[0] + sums[1] + sums[2]);
+  toggle('best', 'Include feasts');
+  toggle('overview', 'Combos');
+  const chip = $('#overview .chip.feast');
+  assert.ok(chip, 'a feast among the top combos');
+  assert.equal(chip.className, 'chip feast');
+  assert.equal(icon($('svg', chip)), '#ui-feast');
+  assert.equal($('svg', chip).getAttribute('class'), 'ic ic-13');
+  assert.equal($$('#overview .chip').filter((c) => c.className === 'chip feast').length, $$('#overview .chip svg').length, 'only feasts carry the mark');
+});
+storageBroken = false;
+store.set(KEY, JSON.stringify({ biome: 'Meadows', picks: { Honey: 0 } }));
+await boot();
+check('a saved zero pick counts as nothing', () => {
+  assert.equal(text($('#gather .head .mono')), '0 entries · 0 portions');
+  assert.equal($('#gather-badge').hidden, true);
 });
 
 if (failed) {
