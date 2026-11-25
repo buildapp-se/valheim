@@ -126,7 +126,7 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - npm audit: 2026-09-24, pass, 0 in production, 0 in the dev chain
 - Secrets: 2026-09-24, pass, gitleaks 0 findings in 19 commits
 - Actions: 2026-09-24, pass, zizmor 0 high, 0 medium, 0 low
-- WCAG 2.2 AA: 2026-09-24, warn, axe 4.13.0 0 violations on buildapp.se/valheim (mobile, one page); manual keyboard pass not done
+- WCAG 2.2 AA: 2026-11-25, warn, axe 4.14.0 0 violations live on index (first visit and Plains chosen) and privacy.html at 390 and 1440 px; manual keyboard pass not done (was 2026-09-24, axe 4.13.0, mobile, one page)
 - Headers (automated): 2026-10-27, pass, 6 of 6 on buildapp.se/valheim, Observatory B+ on buildapp.se
 - npm audit (automated): 2026-10-06, pass, 1 targets; 0 failed, 0 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a/valheim.json
 - Secrets (automated): 2026-10-06, pass, 2 targets; 0 failed, 0 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-10-06-batch-a/valheim.json
