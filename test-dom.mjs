@@ -567,7 +567,9 @@ check('unticking a resource hides every dish that needs it, everywhere', () => {
   change($('input', $$('#resources label').find((l) => text($('.nm', l)) === 'Carrot')), { checked: true });
   assert.deepEqual(saved().off, ['Honey']);
   click(button('Untick all', $('#resources')));
-  assert.equal(text($('#best .count-note')), '0 foods from your resources, 30 resources skipped'.replace('30', String(saved().off.length)));
+  // only what the player can see: 18 at Black Forest, not every resource in the game
+  assert.equal(text($('#best .count-note')), '0 foods from your resources, 18 resources skipped');
+  assert.equal(saved().off.length, 18);
   for (const b of builds()) assert.equal(text($('.empty', b)), 'Fewer than three foods available. Tick more resources.');
   click(button('Tick all', $('#resources')));
   assert.deepEqual(saved().off, []);
@@ -639,6 +641,23 @@ await boot();
 check('a saved zero pick counts as nothing', () => {
   assert.equal(text($('#gather .head .mono')), '0 entries · 0 portions');
   assert.equal($('#gather-badge').hidden, true);
+});
+for (const [label, bad] of [
+  ['a biome that no longer exists', { biome: 'Ocean' }],
+  ['null picks and off, an unknown sort', { biome: 'Meadows', picks: null, off: null, sort: 'weight', dir: 'up' }],
+]) {
+  store.set(KEY, JSON.stringify(bad));
+  await boot();
+  check(`saved state with ${label} falls back to defaults instead of a blank page`, () => {
+    if (bad.biome === 'Ocean') return assert.equal($('#picker').hidden, false);
+    assert.equal(text($('.spoiler-chip')), 'Spoilers: Meadows and earlier');
+    assert.equal(overviewNames().length, 6);
+    assert.equal(text($('#gather .head .mono')), '0 entries · 0 portions');
+  });
+}
+check('the footer privacy summary carries the same date and version as privacy.html', () => {
+  const full = /Last updated ([^<]+?) &middot; Version ([\d.]+)/.exec(readFileSync(new URL('./privacy.html', import.meta.url), 'utf8'));
+  assert.equal(text($('#privacy p')), `Last updated ${full[1]}, version ${full[2]}.`);
 });
 
 if (failed) {

@@ -51,10 +51,22 @@ interface State {
 const KEY = 'valheim-food-planner:v1';
 const state: State = { biome: null, off: [], picks: {}, feasts: false, sort: 'total', dir: 'desc', grouped: true, combos: false };
 try {
-  const saved = localStorage.getItem(KEY);
-  if (saved) Object.assign(state, JSON.parse(saved) as Partial<State>);
+  const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Record<string, unknown>;
+  // take a saved field only if it still fits: a renamed biome or sort, or a hand-edited value, would
+  // otherwise blank the page. Anything that does not fit falls back to its default.
+  const fits: Record<keyof State, (v: unknown) => boolean> = {
+    biome: (v) => BIOMES.includes(v as Biome),
+    off: (v) => Array.isArray(v) && v.every((x) => typeof x === 'string'),
+    picks: (v) => typeof v === 'object' && v !== null && !Array.isArray(v) && Object.values(v).every((n) => typeof n === 'number'),
+    feasts: (v) => typeof v === 'boolean',
+    sort: (v) => ['name', 'health', 'stamina', 'eitr', 'total', 'healing', 'duration', 'station'].includes(v as string),
+    dir: (v) => v === 'asc' || v === 'desc',
+    grouped: (v) => typeof v === 'boolean',
+    combos: (v) => typeof v === 'boolean',
+  };
+  for (const k of Object.keys(fits) as Array<keyof State>) if (fits[k](saved?.[k])) Object.assign(state, { [k]: saved[k] });
 } catch {
-  /* private mode or blocked storage: run without persistence */
+  /* private mode, blocked storage or unreadable JSON: run with the defaults */
 }
 // picks are portions; snap anything saved before that (or for a renamed item) to valid steps
 for (const [name, n] of Object.entries(state.picks)) {
@@ -351,7 +363,8 @@ function renderPicker(): void {
 // ---- best food ----------------------------------------------------------------------
 function renderBest(): void {
   const cand = visibleFoods();
-  const off = state.off.length;
+  // only the unticked resources the player can see: later biomes' resources are hidden, not skipped
+  const off = raws.filter((x) => inBiome(x) && state.off.includes(x.name)).length;
   replace(
     'best',
     h(
@@ -870,7 +883,7 @@ function renderResources(): void {
       'div',
       { class: 'head' },
       h('h2', {}, 'Resources'),
-      h('span', { class: 'controls right' }, h('button', { class: 'small', onclick: () => update({ off: [] }) }, 'Tick all'), h('button', { class: 'small', onclick: () => update({ off: raws.map((x) => x.name) }) }, 'Untick all')),
+      h('span', { class: 'controls right' }, h('button', { class: 'small', onclick: () => update({ off: [] }) }, 'Tick all'), h('button', { class: 'small', onclick: () => update({ off: raws.filter((x) => inBiome(x) || state.off.includes(x.name)).map((x) => x.name) }) }, 'Untick all')),
     ),
     h('p', { class: 'lede' }, 'Untick what you cannot farm. Every dish and mead that needs it, anywhere in its recipe, disappears from the whole page.'),
     h('div', { class: 'resgrid' }, ...groups),
