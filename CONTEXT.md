@@ -35,7 +35,9 @@ section, the chosen biome and the primary action. Dark theme only.
   ink `--ink/--ink-2/--ink-3`, accent `--ember/--ember-hi`. Old names (`--gold`, `--text`,
   `--panel`) are kept as aliases so `privacy.html` keeps resolving.
 - Type: Grenze (display), IBM Plex Sans (UI), IBM Plex Mono (every number, so columns align).
-  One Google Fonts request, three families.
+  Self-hosted since 2026-11-25: latin woff2 subsets in `fonts/` (OFL, see `fonts/README.md`), no
+  request to Google. Grenze and Plex Sans are variable fonts, one file each; Plex Mono has three
+  static weights. `og.source.html` still loads them from Google, it is only rendered by hand.
 - Stat colours keep their meaning, shades lifted for AA on the new ground:
   health `#ef6b5e`, stamina `#e8c24a`, eitr `#6ea8ff`, regen `#63c48b`.
 - Content max width is 1280 (was 1600): six build cards over 1600 made comparing combos a
@@ -69,7 +71,7 @@ section, the chosen biome and the primary action. Dark theme only.
   expanded on phone, and the gather search text.
 - Station strings are compound (`Cauldron (7) + Stone oven`, `Mead ketill + Fermenter`), so
   `stationIcon()` matches the **primary** station at the start of the string.
-- Deploy: GitHub Actions builds, runs `npm test`, publishes `index.html`, `privacy.html`, `style.css`, `dist/*.js` and `icons/*.png` to Pages. A failing check blocks the deploy.
+- Deploy: GitHub Actions builds, runs `npm test`, publishes `index.html`, `privacy.html`, `style.css`, `dist/*.js`, `icons/*.png` and `fonts/*.woff2` to Pages. A failing check blocks the deploy.
 
 ```mermaid
 graph LR
