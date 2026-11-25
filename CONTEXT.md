@@ -69,6 +69,9 @@ section, the chosen biome and the primary action. Dark theme only.
   Three pieces of view-only state are deliberately **not** persisted: the first-visit tile
   selection (you pick a tile, then confirm with Continue), which overview rows are
   expanded on phone, and the gather search text.
+- `app.js` sets `ready` on `<html>` after the first render. Until then `style.css` keeps the nav
+  invisible (visibility, so nothing moves), and a notice in `main` says the planner did not load if
+  `ready` has not come after 3 s.
 - Station strings are compound (`Cauldron (7) + Stone oven`, `Mead ketill + Fermenter`), so
   `stationIcon()` matches the **primary** station at the start of the string.
 - Deploy: GitHub Actions builds, runs `npm test`, publishes `index.html`, `privacy.html`, `style.css`, `dist/*.js`, `icons/*.png` and `fonts/*.woff2` to Pages. A failing check blocks the deploy.
