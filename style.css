@@ -141,6 +141,7 @@ button.danger:hover { border-color: var(--health); color: var(--health); backgro
 select {
   height: var(--control-h); padding: 0 var(--s-3); border-radius: var(--r-1);
   background: transparent; border: 1px solid var(--line-strong);
+  font-size: 16px; /* as .search: iOS Safari zooms into a focused field under 16px */
 }
 select:hover { border-color: var(--ember); }
 select option { background: var(--plank); color: var(--ink); }
@@ -508,6 +509,7 @@ tr.panel .k { color: var(--ink-3); font-family: var(--font-num); font-size: 11px
 .search {
   width: 100%; height: var(--tap-h); margin-bottom: var(--s-4); padding: 0 var(--s-3);
   background: var(--plank); border: 1px solid var(--line-strong); border-radius: var(--r-1);
+  font-size: 16px; /* iOS Safari zooms the page into a focused text field under 16px */
 }
 .search::placeholder { color: var(--ink-3); }
 .search:hover { border-color: var(--ember); }
