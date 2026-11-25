@@ -9,6 +9,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read # the wait step below lists this run's artifacts
 
 concurrency:
   group: pages
@@ -55,5 +56,17 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out
+      # deploy-pages often found 0 artifacts right after a successful upload (most runs on 2026-11-24
+      # and 25 failed this way): the listing lags the upload. Wait until the run lists it.
+      - name: Wait until the artifact is listed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 30); do
+            n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" -q '[.artifacts[] | select(.name == "github-pages")] | length')
+            [ "$n" -gt 0 ] && echo "listed after $i tries" && exit 0
+            sleep 2
+          done
+          exit 1
       - id: deployment
         uses: actions/deploy-pages@v4
