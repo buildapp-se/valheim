@@ -331,7 +331,7 @@ function renderPicker(): void {
       raw(RIDGE),
       h('div', { class: 'eyebrow' }, ic('app-icon'), h('span', {}, 'FAN TOOL · NO ADS · NO COOKIES')),
       h('h2', {}, 'Three foods.', h('br'), 'The right three.'),
-      h('p', {}, 'Pick your build, take the combo, and walk out with a gather list of exactly what to farm — nothing from biomes you have not reached.'),
+      h('p', {}, 'Pick your build, take the combo, and walk out with a gather list of exactly what to farm, nothing from biomes you have not reached.'),
     ),
     h(
       'div',
@@ -340,7 +340,7 @@ function renderPicker(): void {
       h(
         'p',
         {},
-        'Pick the furthest biome you have reached. Everything past it stays hidden — no foods, no ingredients, no bosses you have not met. You can change this any time from the header.',
+        'Pick the furthest biome you have reached. Everything past it stays hidden: no foods, no ingredients, no bosses you have not met. You can change this any time from the header.',
       ),
     ),
     h(
@@ -394,7 +394,7 @@ function renderBest(): void {
         h('input', { type: 'checkbox', checked: state.feasts, onchange: (e: Event) => update({ feasts: (e.target as HTMLInputElement).checked }) }),
         'Include feasts',
       ),
-      h('span', { class: 'count-note' }, `${cand.length} foods from your resources${off ? `, ${off} resource${off > 1 ? 's' : ''} skipped` : ''}`),
+      h('span', { class: 'count-note' }, `${cand.length} food${cand.length === 1 ? '' : 's'} from your resources${off ? `, ${off} resource${off > 1 ? 's' : ''} skipped` : ''}`),
     ),
     legend(),
     h(
@@ -643,7 +643,7 @@ function renderOverview(): void {
           h(
             'tr',
             { class: 'group' },
-            h('td', { colspan: 10 }, h('div', { class: 'gh' }, ic(biomeIcon(biome), 'ic-18'), h('h3', {}, biome), h('span', { class: 'cnt' }, `${list.length} foods`))),
+            h('td', { colspan: 10 }, h('div', { class: 'gh' }, ic(biomeIcon(biome), 'ic-18'), h('h3', {}, biome), h('span', { class: 'cnt' }, `${list.length} food${list.length === 1 ? '' : 's'}`))),
           ),
           ...list.flatMap(rows),
         );
@@ -786,7 +786,7 @@ function renderGather(): void {
       'div',
       { class: 'head' },
       h('h2', {}, 'Gather list'),
-      h('span', { class: 'mono muted' }, `${picked.length} ${picked.length === 1 ? 'entry' : 'entries'} · ${portions} portions`),
+      h('span', { class: 'mono muted' }, `${picked.length} ${picked.length === 1 ? 'entry' : 'entries'} · ${portions} portion${portions === 1 ? '' : 's'}`),
       hidden > 0 &&
         h(
           'span',
@@ -799,7 +799,7 @@ function renderGather(): void {
     h(
       'p',
       { class: 'lede' },
-      'Counts are portions, one per thing you eat. Dishes marked with an i come in bigger steps — open it to see why. The biggest button is five crafts, like shift-click. The right side is what to bring home, and in which order to craft it.',
+      'Counts are portions, one per thing you eat. Dishes marked with an i come in bigger steps; open it to see why. The biggest button is five crafts, like shift-click. The right side is what to bring home, and in which order to craft it.',
     ),
     h(
       'div',

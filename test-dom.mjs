@@ -499,6 +499,7 @@ check('keyboard focus survives the re-render a click causes', () => {
 });
 check('gather totals: raw resources by biome with source, crafting order deepest first', () => {
   click(button('Add 1 Deer stew', gatherRow('Deer stew')));
+  assert.equal(text($('#gather .head .mono')), '1 entry · 1 portion');
   click(button('Add 2 Boar jerky', gatherRow('Boar jerky')));
   assert.equal(text($('#gather .head .mono')), '2 entries · 3 portions');
   assert.deepEqual($$('#gather .result .resgroup h3').map(text), ['Meadows', 'Black Forest']);
