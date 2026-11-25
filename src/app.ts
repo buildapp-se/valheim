@@ -49,33 +49,45 @@ interface State {
   combos: boolean;
 }
 const KEY = 'valheim-food-planner:v1';
-const state: State = { biome: null, off: [], picks: {}, feasts: false, sort: 'total', dir: 'desc', grouped: true, combos: false };
-try {
-  const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Record<string, unknown>;
-  // take a saved field only if it still fits: a renamed biome or sort, or a hand-edited value, would
-  // otherwise blank the page. Anything that does not fit falls back to its default.
-  const fits: Record<keyof State, (v: unknown) => boolean> = {
-    biome: (v) => BIOMES.includes(v as Biome),
-    off: (v) => Array.isArray(v) && v.every((x) => typeof x === 'string'),
-    picks: (v) => typeof v === 'object' && v !== null && !Array.isArray(v) && Object.values(v).every((n) => typeof n === 'number'),
-    feasts: (v) => typeof v === 'boolean',
-    sort: (v) => ['name', 'health', 'stamina', 'eitr', 'total', 'healing', 'duration', 'station'].includes(v as string),
-    dir: (v) => v === 'asc' || v === 'desc',
-    grouped: (v) => typeof v === 'boolean',
-    combos: (v) => typeof v === 'boolean',
-  };
-  for (const k of Object.keys(fits) as Array<keyof State>) if (fits[k](saved?.[k])) Object.assign(state, { [k]: saved[k] });
-} catch {
-  /* private mode, blocked storage or unreadable JSON: run with the defaults */
-}
-// picks are portions; snap anything saved before that (or for a renamed item) to valid steps
-for (const [name, n] of Object.entries(state.picks)) {
+const DEFAULTS: State = { biome: null, off: [], picks: {}, feasts: false, sort: 'total', dir: 'desc', grouped: true, combos: false };
+const state: State = { ...DEFAULTS, picks: {} };
+/** read the saved state over the defaults; runs at start and when another tab saves */
+function load(): void {
+  Object.assign(state, DEFAULTS, { picks: {} });
   try {
-    state.picks[name] = snap(getItem(name), n);
+    const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Record<string, unknown>;
+    // take a saved field only if it still fits: a renamed biome or sort, or a hand-edited value, would
+    // otherwise blank the page. Anything that does not fit falls back to its default.
+    const fits: Record<keyof State, (v: unknown) => boolean> = {
+      biome: (v) => BIOMES.includes(v as Biome),
+      off: (v) => Array.isArray(v) && v.every((x) => typeof x === 'string'),
+      picks: (v) => typeof v === 'object' && v !== null && !Array.isArray(v) && Object.values(v).every((n) => typeof n === 'number'),
+      feasts: (v) => typeof v === 'boolean',
+      sort: (v) => ['name', 'health', 'stamina', 'eitr', 'total', 'healing', 'duration', 'station'].includes(v as string),
+      dir: (v) => v === 'asc' || v === 'desc',
+      grouped: (v) => typeof v === 'boolean',
+      combos: (v) => typeof v === 'boolean',
+    };
+    for (const k of Object.keys(fits) as Array<keyof State>) if (fits[k](saved?.[k])) Object.assign(state, { [k]: saved[k] });
   } catch {
-    delete state.picks[name];
+    /* private mode, blocked storage or unreadable JSON: run with the defaults */
+  }
+  // picks are portions; snap anything saved before that (or for a renamed item) to valid steps
+  for (const [name, n] of Object.entries(state.picks)) {
+    try {
+      state.picks[name] = snap(getItem(name), n);
+    } catch {
+      delete state.picks[name];
+    }
   }
 }
+load();
+// another tab saved: take its state, or this tab's next click would overwrite what was added there
+window.addEventListener('storage', (e) => {
+  if (e.key !== KEY) return;
+  load();
+  render();
+});
 function save(): void {
   try {
     localStorage.setItem(KEY, JSON.stringify(state));

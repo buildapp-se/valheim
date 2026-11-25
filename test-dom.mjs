@@ -655,6 +655,14 @@ for (const [label, bad] of [
     assert.equal(text($('#gather .head .mono')), '0 entries · 0 portions');
   });
 }
+check('a save in another tab shows here, so the next click does not overwrite it', () => {
+  store.set(KEY, JSON.stringify({ biome: 'Meadows', picks: { Raspberries: 1 } }));
+  fire(window, 'storage', { key: KEY });
+  assert.equal($('#gather-badge').textContent, '1');
+  click(button('Add 1 Honey', gatherRow('Honey')));
+  assert.deepEqual(saved().picks, { Raspberries: 1, Honey: 1 });
+  click(button('Clear', $('#gather')));
+});
 check('the footer privacy summary carries the same date and version as privacy.html', () => {
   const full = /Last updated ([^<]+?) &middot; Version ([\d.]+)/.exec(readFileSync(new URL('./privacy.html', import.meta.url), 'utf8'));
   assert.equal(text($('#privacy p')), `Last updated ${full[1]}, version ${full[2]}.`);
