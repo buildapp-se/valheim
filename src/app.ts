@@ -960,6 +960,8 @@ function render(): void {
   restoreFocus(focus);
 }
 render();
+// shows the nav and hides the did-not-load notice (style.css), only once the page is drawn
+document.documentElement.classList.add('ready');
 
 // highlight the nav link for the section in view
 const links = [...document.querySelectorAll<HTMLAnchorElement>('#nav a')];

@@ -114,7 +114,17 @@ const boot = async () => import(`./dist/app.js?boot=${boots++}`);
 
 // ---- first visit -------------------------------------------------------------------------
 store.set(KEY, JSON.stringify({ picks: { Bread: 1, 'No such dish': 3, Sausages: 5 } }));
+const readyBefore = document.documentElement.classList.contains('ready');
 await boot();
+
+check('without app.js the nav is invisible and a notice says the page did not load; app.js lifts both', () => {
+  assert.equal(readyBefore, false);
+  assert.match(text($('main .loadfail')), /did not load/);
+  assert.equal(document.documentElement.classList.contains('ready'), true);
+  const css = readFileSync(new URL('./style.css', import.meta.url), 'utf8');
+  assert.match(css, /html:not\(\.ready\) \.tabs \{ visibility: hidden; \}/);
+  assert.match(css, /html\.ready \.loadfail \{ display: none; \}/);
+});
 
 check('first visit shows only the picker, Continue disabled until a tile is chosen', () => {
   assert.equal($('#picker').hidden, false);
