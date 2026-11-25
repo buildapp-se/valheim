@@ -72,14 +72,19 @@ function load(): void {
   } catch {
     /* private mode, blocked storage or unreadable JSON: run with the defaults */
   }
-  // picks are portions; snap anything saved before that (or for a renamed item) to valid steps
+  // picks are portions; snap anything saved before that to valid steps. Key by the item's own
+  // name: getItem ignores case, so a pick saved under other casing would otherwise be kept but
+  // never shown, counted as hidden, and only removable with Clear. Unknown names are dropped.
+  const picks: Record<string, number> = {};
   for (const [name, n] of Object.entries(state.picks)) {
     try {
-      state.picks[name] = snap(getItem(name), n);
+      const it = getItem(name);
+      picks[it.name] = snap(it, (picks[it.name] ?? 0) + n);
     } catch {
-      delete state.picks[name];
+      /* renamed or removed item */
     }
   }
+  state.picks = picks;
 }
 load();
 // another tab saved: take its state, or this tab's next click would overwrite what was added there

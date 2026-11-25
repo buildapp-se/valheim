@@ -642,6 +642,12 @@ check('a saved zero pick counts as nothing', () => {
   assert.equal(text($('#gather .head .mono')), '0 entries · 0 portions');
   assert.equal($('#gather-badge').hidden, true);
 });
+store.set(KEY, JSON.stringify({ biome: 'Meadows', picks: { honey: 2, Honey: 1 } }));
+await boot();
+check('a pick saved under other casing counts under the item, not as hidden', () => {
+  assert.equal(text($('#gather .head .mono')), '1 entry · 3 portions');
+  assert.equal($('#gather-hidden'), null);
+});
 for (const [label, bad] of [
   ['a biome that no longer exists', { biome: 'Ocean' }],
   ['null picks and off, an unknown sort', { biome: 'Meadows', picks: null, off: null, sort: 'weight', dir: 'up' }],
