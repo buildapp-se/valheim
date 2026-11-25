@@ -113,10 +113,12 @@ h3 { font-size: 21px; color: var(--ink); }
 .ic-40 { width: 40px; height: 40px; }
 
 /* ---- focus: one visible ring everywhere ------------------------------------ */
-:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--focus); position: relative; z-index: 3; }
+/* Transparent outline, not none: forced colors drops box-shadow and paints the outline instead. */
+:focus-visible { outline: 2px solid transparent; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--focus); position: relative; z-index: 3; }
 
 /* ---- controls -------------------------------------------------------------- */
 button, select, input { font: inherit; color: var(--ink); }
+code { overflow-wrap: anywhere; } /* the storage key is one long word */
 button { cursor: pointer; }
 
 button, .btn {
@@ -178,7 +180,7 @@ input[type='checkbox']:hover { border-color: var(--ember); }
 .biome { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .spoiler-chip {
   font-family: var(--font-num); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--ink-3); border: 1px solid var(--line); border-radius: var(--r-1); padding: 6px 10px; white-space: nowrap;
+  color: var(--ink-3); border: 1px solid var(--line); border-radius: var(--r-1); padding: 6px 10px;
 }
 .biome .pick { display: inline-flex; align-items: center; gap: var(--s-2); }
 .biome .pick .ic { color: var(--ember); }
@@ -312,6 +314,8 @@ html.ready .loadfail { display: none; }
 .bar .e { background: var(--eitr); }
 .regen { height: 3px; margin-top: 2px; background: var(--plank-2); overflow: hidden; }
 .regen span { display: block; height: 100%; background: var(--regen); }
+/* forced colors would blank the backgrounds, and the bars are nothing but backgrounds */
+.bar, .regen, .legend i { forced-color-adjust: none; }
 
 /* stat slots: icon + number, fixed order so the eye compares down the column */
 .sum { display: flex; align-items: center; gap: var(--s-1) 18px; flex-wrap: wrap; font-family: var(--font-num); font-size: 14px; }
@@ -582,4 +586,4 @@ tr.panel .k { color: var(--ink-3); font-family: var(--font-num); font-size: 11px
 /* `all: unset` on the custom buttons (steppers, marks, sort headers, expand, tiles) also
    clears the focus ring above, and their selectors outrank `:focus-visible`. Repeated last,
    at a specificity none of them reaches, so keyboard focus is visible on every control. */
-html body :focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--focus); position: relative; z-index: 3; }
+html body :focus-visible { outline: 2px solid transparent; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--focus); position: relative; z-index: 3; }
