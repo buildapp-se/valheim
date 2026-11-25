@@ -673,6 +673,9 @@ check('the footer privacy summary carries the same date and version as privacy.h
   const full = /Last updated ([^<]+?) &middot; Version ([\d.]+)/.exec(readFileSync(new URL('./privacy.html', import.meta.url), 'utf8'));
   assert.equal(text($('#privacy p')), `Last updated ${full[1]}, version ${full[2]}.`);
 });
+check('both pages load no third-party fonts, as the privacy texts say', () => {
+  for (const f of ['./index.html', './privacy.html', './style.css']) assert.doesNotMatch(readFileSync(new URL(f, import.meta.url), 'utf8'), /fonts\.(googleapis|gstatic)\.com/, f);
+});
 
 if (failed) {
   console.log(`${failed} page check(s) failed`);
