@@ -43,6 +43,9 @@ jobs:
         run: |
           sed -i -E "s|(src=\"dist/app\.js)\"|\1?v=${GITHUB_SHA}\"|; s|(href=\"style\.css)\"|\1?v=${GITHUB_SHA}\"|" out/index.html
           sed -i -E "s|(from '\./[a-z]+\.js)'|\1?v=${GITHUB_SHA}'|g" out/dist/*.js
+          # modulepreload hrefs must match the tagged import URLs, or the preload is wasted.
+          sed -i -E "s|(rel=\"modulepreload\" href=\"dist/[a-z]+\.js)\"|\1?v=${GITHUB_SHA}\"|g" out/index.html
+          ! grep -E 'modulepreload" href="dist/[a-z]+\.js"' out/index.html
           grep -q "app.js?v=${GITHUB_SHA}" out/index.html
           sed -i -E "s|(href=\"style\.css)\"|\1?v=${GITHUB_SHA}\"|" out/privacy.html
           grep -q "style.css?v=${GITHUB_SHA}" out/index.html
